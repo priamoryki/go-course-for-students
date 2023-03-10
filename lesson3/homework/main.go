@@ -15,14 +15,7 @@ import (
 type Transformer func(state *ParseState, bs []byte) []byte
 
 func getAllBytes(state *ParseState, bs []byte) []byte {
-	allBytes := make([]byte, 0, len(state.restBytes)+len(bs))
-	for _, b := range state.restBytes {
-		allBytes = append(allBytes, b)
-	}
-	for _, b := range bs {
-		allBytes = append(allBytes, b)
-	}
-	return allBytes
+	return append(state.restBytes, bs...)
 }
 
 // returns parsed runes and number of parsed bytes
@@ -66,9 +59,7 @@ func trimSpacesTransformer(state *ParseState, bs []byte) []byte {
 	text := make([]rune, 0)
 	for _, r := range runes {
 		if !unicode.IsSpace(r) {
-			for _, s := range state.spaces {
-				text = append(text, s)
-			}
+			text = append(text, state.spaces...)
 			state.spaces = make([]rune, 0)
 			state.isBeginning = false
 			text = append(text, r)
