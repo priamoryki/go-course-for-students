@@ -119,9 +119,7 @@ func ParseFlags() (*Options, error) {
 
 func applyTransformers(state *ParseState, bs []byte) []byte {
 	result := make([]byte, len(bs))
-	for i, b := range bs {
-		result[i] = b
-	}
+	copy(result, bs)
 	for _, transformer := range state.transformers {
 		result = transformer(state, result)
 	}
