@@ -142,7 +142,7 @@ func ParseFlags() (*Options, error) {
 	flag.StringVar(&opts.To, "to", "", "file to write. by default - stdout")
 	flag.IntVar(&opts.Offset, "offset", 0, "number of bytes to skip. by default - 0")
 	flag.IntVar(&opts.Limit, "limit", math.MaxInt, "maximum number of bytes to read. by default - max integer value")
-	flag.IntVar(&opts.BlockSize, "block-size", 1, "file to write. by default - 1024")
+	flag.IntVar(&opts.BlockSize, "block-size", 1024, "file to write. by default - 1024")
 	flag.StringVar(&opts.Conv, "conv", "", "conversions to apply on input data. by default - nothing")
 
 	flag.Parse()
