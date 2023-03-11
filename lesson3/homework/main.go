@@ -12,10 +12,94 @@ import (
 	"unicode/utf8"
 )
 
-type Transformer func(state *ParseState, bs []byte) []byte
+type Transformer interface {
+	Transform(bs []byte) []byte
+}
 
-func getAllBytes(state *ParseState, bs []byte) []byte {
-	return append(state.restBytes, bs...)
+type TransformersComposer struct {
+	transformers []Transformer
+}
+
+func (transformer *TransformersComposer) AddTransformer(t Transformer) {
+	transformer.transformers = append(transformer.transformers, t)
+}
+
+func (transformer *TransformersComposer) Transform(bs []byte) []byte {
+	for _, transformer := range transformer.transformers {
+		bs = transformer.Transform(bs)
+	}
+	return bs
+}
+
+func NewTransformersComposer() *TransformersComposer {
+	return &TransformersComposer{transformers: make([]Transformer, 0)}
+}
+
+type CaseTransformer struct {
+	state    *ParseState
+	function func(r rune) rune
+}
+
+func (transformer *CaseTransformer) Transform(bs []byte) []byte {
+	allBytes := transformer.state.GetAllBytes(bs)
+	runes, bytesNum := parseRunes(allBytes)
+	transformer.state.restBytes = allBytes[bytesNum:]
+	for i, r := range runes {
+		runes[i] = transformer.function(r)
+	}
+	return []byte(string(runes))
+}
+
+type LowerCaseTransformer struct {
+	CaseTransformer
+}
+
+func NewLowerCaseTransformer(state *ParseState) *LowerCaseTransformer {
+	return &LowerCaseTransformer{
+		CaseTransformer{state: state, function: unicode.ToLower},
+	}
+}
+
+type UpperCaseTransformer struct {
+	CaseTransformer
+}
+
+func NewUpperCaseTransformer(state *ParseState) *UpperCaseTransformer {
+	return &UpperCaseTransformer{
+		CaseTransformer{state: state, function: unicode.ToUpper},
+	}
+}
+
+type TrimSpacesTransformer struct {
+	state       *ParseState
+	spaces      []rune
+	isBeginning bool
+}
+
+func (transformer *TrimSpacesTransformer) Transform(bs []byte) []byte {
+	allBytes := transformer.state.GetAllBytes(bs)
+	runes, bytesNum := parseRunes(allBytes)
+	transformer.state.restBytes = allBytes[bytesNum:]
+	text := make([]rune, 0)
+	for _, r := range runes {
+		if !unicode.IsSpace(r) {
+			text = append(text, transformer.spaces...)
+			transformer.spaces = make([]rune, 0)
+			transformer.isBeginning = false
+			text = append(text, r)
+		} else if !transformer.isBeginning {
+			transformer.spaces = append(transformer.spaces, r)
+		}
+	}
+	return []byte(string(text))
+}
+
+func NewTrimSpacesTransformer(state *ParseState) *TrimSpacesTransformer {
+	return &TrimSpacesTransformer{
+		state:       state,
+		spaces:      make([]rune, 0),
+		isBeginning: true,
+	}
 }
 
 // returns parsed runes and number of parsed bytes
@@ -34,53 +118,12 @@ func parseRunes(bs []byte) ([]rune, int) {
 	return result, resultSize
 }
 
-func toCase(state *ParseState, bs []byte, f func(rune) rune) []byte {
-	allBytes := getAllBytes(state, bs)
-	runes, bytesNum := parseRunes(allBytes)
-	state.restBytes = allBytes[bytesNum:]
-	for i, r := range runes {
-		runes[i] = f(r)
-	}
-	return []byte(string(runes))
-}
-
-func lowerCaseTransformer(state *ParseState, bs []byte) []byte {
-	return toCase(state, bs, unicode.ToLower)
-}
-
-func upperCaseTransformer(state *ParseState, bs []byte) []byte {
-	return toCase(state, bs, unicode.ToUpper)
-}
-
-func trimSpacesTransformer(state *ParseState, bs []byte) []byte {
-	allBytes := getAllBytes(state, bs)
-	runes, bytesNum := parseRunes(allBytes)
-	state.restBytes = allBytes[bytesNum:]
-	text := make([]rune, 0)
-	for _, r := range runes {
-		if !unicode.IsSpace(r) {
-			text = append(text, state.spaces...)
-			state.spaces = make([]rune, 0)
-			state.isBeginning = false
-			text = append(text, r)
-		} else if !state.isBeginning {
-			state.spaces = append(state.spaces, r)
-		}
-	}
-	return []byte(string(text))
-}
-
-var conversions = map[string]Transformer{
-	"lower_case":  lowerCaseTransformer,
-	"upper_case":  upperCaseTransformer,
-	"trim_spaces": trimSpacesTransformer,
-}
-
 type ParseState struct {
-	transformers []Transformer
-	restBytes    []byte
-	spaces       []rune
-	isBeginning  bool
+	restBytes []byte
+}
+
+func (state *ParseState) GetAllBytes(bs []byte) []byte {
+	return append(state.restBytes, bs...)
 }
 
 type Options struct {
@@ -117,32 +160,26 @@ func ParseFlags() (*Options, error) {
 	return &opts, nil
 }
 
-func applyTransformers(state *ParseState, bs []byte) []byte {
-	result := make([]byte, len(bs))
-	copy(result, bs)
-	for _, transformer := range state.transformers {
-		result = transformer(state, result)
-	}
-	return result
-}
-
 func run(opts Options) error {
 	conversionsSet := make(map[string]struct{})
 	state := &ParseState{
-		transformers: make([]Transformer, 0),
-		restBytes:    make([]byte, 0),
-		spaces:       make([]rune, 0),
-		isBeginning:  true,
+		restBytes: make([]byte, 0),
 	}
+	conversions := map[string]Transformer{
+		"lower_case":  NewLowerCaseTransformer(state),
+		"upper_case":  NewUpperCaseTransformer(state),
+		"trim_spaces": NewTrimSpacesTransformer(state),
+	}
+	transformer := NewTransformersComposer()
 
 	if opts.Conv != "" {
 		for _, conversion := range strings.Split(opts.Conv, ",") {
-			transformer, ok := conversions[conversion]
+			t, ok := conversions[conversion]
 			if !ok {
 				return errors.New("no such convertor:" + conversion)
 			}
 			conversionsSet[conversion] = struct{}{}
-			state.transformers = append(state.transformers, transformer)
+			transformer.AddTransformer(t)
 		}
 	}
 
@@ -198,7 +235,7 @@ func run(opts Options) error {
 		if err != nil {
 			return fmt.Errorf("can't read from file:%w", err)
 		}
-		_, err = writer.Write(applyTransformers(state, block[:min(bytesNum, len(block))]))
+		_, err = writer.Write(transformer.Transform(block[:min(bytesNum, len(block))]))
 		if err != nil {
 			return fmt.Errorf("can't write in file:%w", err)
 		}
