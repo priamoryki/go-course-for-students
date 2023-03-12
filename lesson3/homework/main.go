@@ -84,9 +84,9 @@ func (transformer *TrimSpacesTransformer) Transform(bs []byte) []byte {
 	for _, r := range runes {
 		if !unicode.IsSpace(r) {
 			text = append(text, transformer.spaces...)
+			text = append(text, r)
 			transformer.spaces = make([]rune, 0)
 			transformer.isBeginning = false
-			text = append(text, r)
 		} else if !transformer.isBeginning {
 			transformer.spaces = append(transformer.spaces, r)
 		}
@@ -229,9 +229,9 @@ func run(opts Options) error {
 	}
 	defer output.Close()
 
+	block := make([]byte, opts.BlockSize)
 	reader := io.LimitReader(input, int64(opts.Offset))
 	for i := 0; i < opts.Offset; {
-		block := make([]byte, opts.BlockSize)
 		bytesNum, err := reader.Read(block)
 		i += bytesNum
 		if err == io.EOF && i < opts.Offset {
