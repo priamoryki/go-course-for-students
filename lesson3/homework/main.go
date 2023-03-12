@@ -102,6 +102,22 @@ func NewTrimSpacesTransformer(state *ParseState) *TrimSpacesTransformer {
 	}
 }
 
+type TransformerWriter struct {
+	writer      io.Writer
+	transformer Transformer
+}
+
+func (writer *TransformerWriter) Write(bs []byte) (n int, err error) {
+	return writer.writer.Write(writer.transformer.Transform(bs))
+}
+
+func NewTransformerWriter(writer io.Writer, transformer Transformer) *TransformerWriter {
+	return &TransformerWriter{
+		writer:      writer,
+		transformer: transformer,
+	}
+}
+
 // returns parsed runes and number of parsed bytes
 func parseRunes(bs []byte) ([]rune, int) {
 	result := make([]rune, 0, utf8.RuneCount(bs))
@@ -189,17 +205,17 @@ func run(opts Options) error {
 		return errors.New("lower_case conversion can't be used with upper_case conversion")
 	}
 
-	reader := os.Stdin
+	input := os.Stdin
 	if opts.From != "" {
 		file, err := os.Open(opts.From)
 		if err != nil {
-			return errors.New("can't open file" + err.Error())
+			return fmt.Errorf("can't open file:%w", err)
 		}
-		reader = file
+		input = file
 	}
-	defer reader.Close()
+	defer input.Close()
 
-	writer := os.Stdout
+	output := os.Stdout
 	if opts.To != "" {
 		_, err := os.Stat(opts.To)
 		if !os.IsNotExist(err) {
@@ -207,17 +223,18 @@ func run(opts Options) error {
 		}
 		file, err := os.Create(opts.To)
 		if err != nil {
-			return errors.New("can't open file" + err.Error())
+			return fmt.Errorf("can't open file:%w", err)
 		}
-		writer = file
+		output = file
 	}
-	defer writer.Close()
+	defer output.Close()
 
+	reader := io.LimitReader(input, int64(opts.Offset))
 	for i := 0; i < opts.Offset; {
-		block := make([]byte, min(opts.BlockSize, opts.Offset-i))
+		block := make([]byte, opts.BlockSize)
 		bytesNum, err := reader.Read(block)
 		i += bytesNum
-		if err == io.EOF {
+		if err == io.EOF && i < opts.Offset {
 			return errors.New("offset is more than the file size")
 		}
 		if err != nil {
@@ -225,30 +242,17 @@ func run(opts Options) error {
 		}
 	}
 
-	for i := 0; i < opts.Limit; {
-		block := make([]byte, min(opts.BlockSize, opts.Limit-i))
-		bytesNum, err := reader.Read(block)
-		i += bytesNum
+	blockSize := int64(opts.BlockSize)
+	reader = io.LimitReader(input, int64(opts.Limit))
+	writer := NewTransformerWriter(output, transformer)
+	for {
+		_, err := io.CopyN(writer, reader, blockSize)
 		if err == io.EOF {
 			break
-		}
-		if err != nil {
-			return fmt.Errorf("can't read from file:%w", err)
-		}
-		_, err = writer.Write(transformer.Transform(block[:min(bytesNum, len(block))]))
-		if err != nil {
-			return fmt.Errorf("can't write in file:%w", err)
 		}
 	}
 
 	return nil
-}
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
 }
 
 func main() {
