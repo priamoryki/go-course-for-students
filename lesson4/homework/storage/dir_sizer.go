@@ -21,9 +21,7 @@ type DirSizer interface {
 // sizer implement the DirSizer interface
 type sizer struct {
 	// maxWorkersCount number of workers for asynchronous run
-	maxWorkersCount int
-
-	// TODO: add other fields as you wish
+	// maxWorkersCount int
 }
 
 // NewSizer returns new DirSizer instance
@@ -32,6 +30,30 @@ func NewSizer() DirSizer {
 }
 
 func (a *sizer) Size(ctx context.Context, d Dir) (Result, error) {
-	// TODO: implement this
-	return Result{}, nil
+	result := Result{}
+	dirs, files, err := d.Ls(ctx)
+	if err != nil {
+		return result, err
+	}
+	for _, file := range files {
+		stat, err := file.Stat(ctx)
+		if err != nil {
+			return result, err
+		}
+		result.Size += stat
+		result.Count += 1
+	}
+	c := make(chan Result, len(dirs))
+	for _, dir := range dirs {
+		go func(ctx context.Context, c chan Result, dir Dir) {
+			res, _ := a.Size(ctx, dir)
+			c <- res
+		}(ctx, c, dir)
+	}
+	for i := 0; i < len(dirs); i++ {
+		res := <-c
+		result.Size += res.Size
+		result.Count += res.Count
+	}
+	return result, nil
 }
