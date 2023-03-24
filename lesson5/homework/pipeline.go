@@ -2,7 +2,6 @@ package executor
 
 import (
 	"context"
-	"sync"
 )
 
 type (
@@ -29,13 +28,7 @@ func ExecutePipeline(ctx context.Context, in In, stages ...Stage) Out {
 				}
 			}
 		}(in)
-		wg := sync.WaitGroup{}
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			in = stage(inWithTimeout)
-		}()
-		wg.Wait()
+		in = stage(inWithTimeout)
 	}
 	return in
 }
