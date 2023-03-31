@@ -250,10 +250,10 @@ func TestValidate(t *testing.T) {
 			},
 			wantErr: true,
 			checkErr: func(err error) bool {
-				a1 := err.(ValidationErrors)
-				a2 := a1[0]
-				assert.Len(t, a1, 1)
-				assert.Len(t, a2.Err.(ValidationErrors), 2)
+				e1 := err.(ValidationErrors)
+				assert.Len(t, e1, 1)
+				e2 := e1[0].Err.(ValidationErrors)
+				assert.Len(t, e2, 2)
 				return true
 			},
 		},
