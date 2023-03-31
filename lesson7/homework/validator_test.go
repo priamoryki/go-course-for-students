@@ -217,6 +217,89 @@ func TestValidate(t *testing.T) {
 				return true
 			},
 		},
+		{
+			name: "valid empty nested struct",
+			args: args{
+				v: struct {
+					A struct {
+					}
+				}{
+					A: struct {
+					}{},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "invalid nested struct",
+			args: args{
+				v: struct {
+					A struct {
+						A string `validate:"len:6"`
+						B int    `validate:"max:99"`
+					}
+				}{
+					A: struct {
+						A string `validate:"len:6"`
+						B int    `validate:"max:99"`
+					}{
+						A: "12345",
+						B: 100,
+					},
+				},
+			},
+			wantErr: true,
+			checkErr: func(err error) bool {
+				a1 := err.(ValidationErrors)
+				a2 := a1[0]
+				assert.Len(t, a1, 1)
+				assert.Len(t, a2.Err.(ValidationErrors), 2)
+				return true
+			},
+		},
+		{
+			name: "valid nested struct",
+			args: args{
+				v: struct {
+					A struct {
+						Len   string `validate:"len:20"`
+						LenZ  string `validate:"len:0"`
+						InInt int    `validate:"in:20,25,30"`
+						InNeg int    `validate:"in:-20,-25,-30"`
+						InStr string `validate:"in:foo,bar"`
+					}
+					MinInt    int    `validate:"min:10"`
+					MinIntNeg int    `validate:"min:-10"`
+					MinStr    string `validate:"min:10"`
+					MinStrNeg string `validate:"min:-1"`
+					MaxInt    int    `validate:"max:20"`
+					MaxIntNeg int    `validate:"max:-2"`
+					MaxStr    string `validate:"max:20"`
+				}{
+					A: struct {
+						Len   string `validate:"len:20"`
+						LenZ  string `validate:"len:0"`
+						InInt int    `validate:"in:20,25,30"`
+						InNeg int    `validate:"in:-20,-25,-30"`
+						InStr string `validate:"in:foo,bar"`
+					}{
+						Len:   "abcdefghjklmopqrstvu",
+						LenZ:  "",
+						InInt: 25,
+						InNeg: -25,
+						InStr: "bar",
+					},
+					MinInt:    15,
+					MinIntNeg: -9,
+					MinStr:    "abcdefghjkl",
+					MinStrNeg: "abc",
+					MaxInt:    16,
+					MaxIntNeg: -3,
+					MaxStr:    "abcdefghjklmopqrst",
+				},
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -229,5 +312,4 @@ func TestValidate(t *testing.T) {
 			}
 		})
 	}
-
 }
