@@ -22,14 +22,11 @@ func NewValidationError(err error) ValidationError {
 type ValidationErrors []ValidationError
 
 func (v ValidationErrors) Error() string {
-	builder := strings.Builder{}
+	errs := make([]string, len(v))
 	for i, err := range v {
-		builder.Write([]byte(err.Err.Error()))
-		if i != len(v)-1 {
-			builder.Write([]byte("\n"))
-		}
+		errs[i] = err.Err.Error()
 	}
-	return builder.String()
+	return strings.Join(errs, "\n")
 }
 
 func Validate(v any) error {
