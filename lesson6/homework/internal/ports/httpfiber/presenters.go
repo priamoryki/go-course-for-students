@@ -28,7 +28,7 @@ type changeAdStatusRequest struct {
 type updateAdRequest struct {
 	Title  string `json:"title"`
 	Text   string `json:"text"`
-	UserID int64  `json:"user_id""`
+	UserID int64  `json:"user_id"`
 }
 
 func AdSuccessResponse(ad *ads.Ad) *fiber.Map {
