@@ -7,8 +7,8 @@ import (
 )
 
 type createAdRequest struct {
-	Title  string `json:"title" validate:"min:1" validate:"max:100"`
-	Text   string `json:"text" validate:"min:1" validate:"max:500"`
+	Title  string `json:"title" validate:"min:1;max:100"`
+	Text   string `json:"text" validate:"min:1;max:500"`
 	UserID int64  `json:"user_id" validate:"min:0"`
 }
 
@@ -26,8 +26,8 @@ type changeAdStatusRequest struct {
 }
 
 type updateAdRequest struct {
-	Title  string `json:"title" validate:"min:1" validate:"max:100"`
-	Text   string `json:"text" validate:"min:1" validate:"max:500"`
+	Title  string `json:"title" validate:"min:1;max:100"`
+	Text   string `json:"text" validate:"min:1;max:500"`
 	UserID int64  `json:"user_id" validate:"min:0"`
 }
 

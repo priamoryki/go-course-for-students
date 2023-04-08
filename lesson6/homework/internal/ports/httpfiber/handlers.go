@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/priamoryki/validator"
 
 	"homework6/internal/app"
 )
@@ -18,7 +19,7 @@ func createAd(a app.App) fiber.Handler {
 			return c.JSON(AdErrorResponse(err))
 		}
 
-		// TODO: validation
+		err = validator.Validate(reqBody)
 		if err != nil {
 			c.Status(http.StatusBadRequest)
 			return c.JSON(AdErrorResponse(err))
@@ -74,7 +75,7 @@ func updateAd(a app.App) fiber.Handler {
 			return c.JSON(AdErrorResponse(err))
 		}
 
-		// TODO: validation
+		err = validator.Validate(reqBody)
 		if err != nil {
 			c.Status(http.StatusBadRequest)
 			return c.JSON(AdErrorResponse(err))
