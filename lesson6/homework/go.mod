@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/gofiber/fiber/v2 v2.43.0
-	github.com/priamoryki/validator v0.0.0-20230408113417-d60afb72d35e
+	github.com/priamoryki/validator v1.2.3
 	github.com/valyala/fasthttp v1.45.0
 )
 

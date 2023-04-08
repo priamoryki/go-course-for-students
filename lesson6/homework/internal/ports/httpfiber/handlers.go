@@ -4,8 +4,6 @@ import (
 	"net/http"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/priamoryki/validator"
-
 	"homework6/internal/app"
 )
 
@@ -19,15 +17,8 @@ func createAd(a app.App) fiber.Handler {
 			return c.JSON(AdErrorResponse(err))
 		}
 
-		err = validator.Validate(reqBody)
-		if err != nil {
-			c.Status(http.StatusBadRequest)
-			return c.JSON(AdErrorResponse(err))
-		}
-
 		ad, err := a.CreateAd(c.Context(), reqBody.Title, reqBody.Text, reqBody.UserID)
 		if err != nil {
-			c.Status(http.StatusForbidden)
 			return c.JSON(AdErrorResponse(err))
 		}
 
@@ -52,7 +43,6 @@ func changeAdStatus(a app.App) fiber.Handler {
 
 		ad, err := a.ChangeAdStatus(c.Context(), int64(adID), reqBody.UserID, reqBody.Published)
 		if err != nil {
-			c.Status(http.StatusForbidden)
 			return c.JSON(AdErrorResponse(err))
 		}
 
@@ -75,15 +65,8 @@ func updateAd(a app.App) fiber.Handler {
 			return c.JSON(AdErrorResponse(err))
 		}
 
-		err = validator.Validate(reqBody)
-		if err != nil {
-			c.Status(http.StatusBadRequest)
-			return c.JSON(AdErrorResponse(err))
-		}
-
 		ad, err := a.UpdateAd(c.Context(), int64(adID), reqBody.UserID, reqBody.Title, reqBody.Text)
 		if err != nil {
-			c.Status(http.StatusForbidden)
 			return c.JSON(AdErrorResponse(err))
 		}
 
