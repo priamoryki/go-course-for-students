@@ -7,9 +7,9 @@ import (
 )
 
 type createAdRequest struct {
-	Title  string `json:"title"`
-	Text   string `json:"text"`
-	UserID int64  `json:"user_id"`
+	Title  string `json:"title" validate:"min:1" validate:"max:100"`
+	Text   string `json:"text" validate:"min:1" validate:"max:500"`
+	UserID int64  `json:"user_id" validate:"min:0"`
 }
 
 type adResponse struct {
@@ -26,9 +26,9 @@ type changeAdStatusRequest struct {
 }
 
 type updateAdRequest struct {
-	Title  string `json:"title"`
-	Text   string `json:"text"`
-	UserID int64  `json:"user_id"`
+	Title  string `json:"title" validate:"min:1" validate:"max:100"`
+	Text   string `json:"text" validate:"min:1" validate:"max:500"`
+	UserID int64  `json:"user_id" validate:"min:0"`
 }
 
 func AdSuccessResponse(ad *ads.Ad) *fiber.Map {
@@ -40,24 +40,6 @@ func AdSuccessResponse(ad *ads.Ad) *fiber.Map {
 			AuthorID:  ad.AuthorID,
 			Published: ad.Published,
 		},
-		"error": nil,
-	}
-}
-
-func AdsSuccessResponse(a []ads.Ad) *fiber.Map {
-	var response []adResponse
-	for i := range a {
-		response = append(response, adResponse{
-			ID:        a[i].ID,
-			Title:     a[i].Title,
-			Text:      a[i].Text,
-			AuthorID:  a[i].AuthorID,
-			Published: a[i].Published,
-		})
-	}
-
-	return &fiber.Map{
-		"data":  response,
 		"error": nil,
 	}
 }
