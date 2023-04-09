@@ -2,19 +2,19 @@ package app
 
 import (
 	"errors"
+	"fmt"
 	"github.com/priamoryki/validator"
-	"github.com/valyala/fasthttp"
 	"homework6/internal/ads"
-	"net/http"
 )
 
-var AdNotFound = errors.New("can't find ad with such ID")
-var NotUsersAd = errors.New("you don't have ad with such ID")
+var ErrAdNotFound = errors.New("can't find ad with such ID")
+var ErrNotUsersAd = errors.New("you don't have ad with such ID")
+var ErrValidation = errors.New("validation error")
 
 type App interface {
-	CreateAd(ctx *fasthttp.RequestCtx, title string, text string, userId int64) (*ads.Ad, error)
-	ChangeAdStatus(ctx *fasthttp.RequestCtx, adID int64, userID int64, published bool) (*ads.Ad, error)
-	UpdateAd(ctx *fasthttp.RequestCtx, adID int64, userID int64, title string, text string) (*ads.Ad, error)
+	CreateAd(title string, text string, userId int64) (*ads.Ad, error)
+	ChangeAdStatus(adID int64, userID int64, published bool) (*ads.Ad, error)
+	UpdateAd(adID int64, userID int64, title string, text string) (*ads.Ad, error)
 }
 
 type Repository interface {
@@ -32,15 +32,14 @@ type Impl struct {
 	repository Repository
 }
 
-func (a Impl) CreateAd(c *fasthttp.RequestCtx, title string, text string, userId int64) (*ads.Ad, error) {
+func (a Impl) CreateAd(title string, text string, userId int64) (*ads.Ad, error) {
 	validateStruct := AdValidatorStruct{
 		Title: title,
 		Text:  text,
 	}
 	err := validator.Validate(validateStruct)
 	if err != nil {
-		c.Error(err.Error(), http.StatusBadRequest)
-		return nil, err
+		return nil, fmt.Errorf("%w: %s", ErrValidation, err.Error())
 	}
 
 	ad := &ads.Ad{
@@ -52,48 +51,42 @@ func (a Impl) CreateAd(c *fasthttp.RequestCtx, title string, text string, userId
 	}
 	err = a.repository.Add(ad)
 	if err != nil {
-		c.Error(err.Error(), http.StatusInternalServerError)
 		return nil, err
 	}
 	return ad, nil
 }
 
-func (a Impl) ChangeAdStatus(c *fasthttp.RequestCtx, adID int64, userID int64, published bool) (*ads.Ad, error) {
+func (a Impl) ChangeAdStatus(adID int64, userID int64, published bool) (*ads.Ad, error) {
 	ad, err := a.repository.FindByID(adID)
 	if err != nil {
-		c.Error(AdNotFound.Error(), http.StatusInternalServerError)
-		return nil, AdNotFound
+		return nil, ErrAdNotFound
 	}
 
 	if ad.AuthorID != userID {
-		c.Error(NotUsersAd.Error(), http.StatusForbidden)
-		return nil, NotUsersAd
+		return nil, ErrNotUsersAd
 	}
 
 	ad.Published = published
 	return ad, nil
 }
 
-func (a Impl) UpdateAd(c *fasthttp.RequestCtx, adID int64, userID int64, title string, text string) (*ads.Ad, error) {
+func (a Impl) UpdateAd(adID int64, userID int64, title string, text string) (*ads.Ad, error) {
 	validateStruct := AdValidatorStruct{
 		Title: title,
 		Text:  text,
 	}
 	err := validator.Validate(validateStruct)
 	if err != nil {
-		c.Error(err.Error(), http.StatusBadRequest)
-		return nil, err
+		return nil, fmt.Errorf("%w: %s", ErrValidation, err.Error())
 	}
 
 	ad, err := a.repository.FindByID(adID)
 	if err != nil {
-		c.Error(AdNotFound.Error(), http.StatusInternalServerError)
-		return nil, AdNotFound
+		return nil, ErrAdNotFound
 	}
 
 	if ad.AuthorID != userID {
-		c.Error(NotUsersAd.Error(), http.StatusForbidden)
-		return nil, NotUsersAd
+		return nil, ErrNotUsersAd
 	}
 
 	ad.Title = title
