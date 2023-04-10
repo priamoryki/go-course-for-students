@@ -55,14 +55,16 @@ func Validate(v any) error {
 			continue
 		}
 
-		parsedTag := strings.Split(tag, ":")
-		if len(parsedTag) != 2 || len(parsedTag[1]) == 0 {
-			errs = append(errs, NewValidationError(ErrInvalidValidatorSyntax))
-			continue
-		}
+		for _, tag := range strings.Split(tag, ";") {
+			parsedTag := strings.Split(tag, ":")
+			if len(parsedTag) != 2 || len(parsedTag[1]) == 0 {
+				errs = append(errs, NewValidationError(ErrInvalidValidatorSyntax))
+				continue
+			}
 
-		if err := fieldValidator(fieldValue, parsedTag[0], parsedTag[1]); err != nil {
-			errs = append(errs, NewValidationError(err))
+			if err := fieldValidator(fieldValue, parsedTag[0], parsedTag[1]); err != nil {
+				errs = append(errs, NewValidationError(err))
+			}
 		}
 	}
 	if len(errs) != 0 {
