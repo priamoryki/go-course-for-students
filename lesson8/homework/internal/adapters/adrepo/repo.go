@@ -6,6 +6,8 @@ import (
 	"homework8/internal/app"
 )
 
+var ErrAdNotFound = errors.New("ad not found")
+
 type Impl struct {
 	currentId int64
 	idToAd    map[int64]*ads.Ad
@@ -40,7 +42,16 @@ func (i *Impl) FindByID(adID int64) (*ads.Ad, error) {
 	return ad, nil
 }
 
-func New() app.Repository {
+func (i *Impl) FindByName(name string) (*ads.Ad, error) {
+	for _, ad := range i.idToAd {
+		if ad.Title == name {
+			return ad, nil
+		}
+	}
+	return nil, ErrAdNotFound
+}
+
+func New() app.Repository[ads.Ad] {
 	return &Impl{
 		currentId: 0,
 		idToAd:    make(map[int64]*ads.Ad),

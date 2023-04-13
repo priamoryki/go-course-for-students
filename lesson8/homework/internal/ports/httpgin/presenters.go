@@ -5,8 +5,28 @@ import (
 )
 
 type response struct {
-	Data  adResponse `json:"data"`
-	Error string     `json:"error"`
+	Data  any    `json:"data"`
+	Error string `json:"error"`
+}
+
+type userResponse struct {
+	ID       int64  `json:"id"`
+	Nickname string `json:"nickname"`
+	Email    string `json:"email"`
+}
+
+type createUserRequest struct {
+	Nickname string `json:"nickname"`
+	Email    string `json:"email"`
+}
+
+type updateUserRequest struct {
+	Nickname string `json:"nickname"`
+	Email    string `json:"email"`
+}
+
+type findUserRequest struct {
+	Nickname string `json:"nickname"`
 }
 
 type createAdRequest struct {
@@ -38,6 +58,20 @@ type updateAdRequest struct {
 	UserID int64  `json:"user_id"`
 }
 
+type findAdRequest struct {
+	Title string `json:"title"`
+}
+
+func userSuccessResponse(user *ads.User) response {
+	return response{
+		Data: userResponse{
+			ID:       user.ID,
+			Nickname: user.Nickname,
+			Email:    user.Email,
+		},
+	}
+}
+
 func adSuccessResponse(ad *ads.Ad) response {
 	return response{
 		Data: adToAdResponse(*ad),
@@ -54,7 +88,7 @@ func adsSuccessResponse(ads []*ads.Ad) adsResponse {
 	return result
 }
 
-func adErrorResponse(err error) response {
+func errorResponse(err error) response {
 	return response{
 		Error: err.Error(),
 	}

@@ -5,24 +5,32 @@ import (
 	"fmt"
 	"github.com/priamoryki/validator"
 	"homework8/internal/ads"
+	"time"
 )
 
+var ErrUserNotFound = errors.New("can't find user with such ID")
 var ErrAdNotFound = errors.New("can't find ad with such ID")
 var ErrNotUsersAd = errors.New("you don't have ad with such ID")
 var ErrValidation = errors.New("validation error")
 
 type App interface {
+	CreateUser(nickname string, email string) (*ads.User, error)
+	UpdateUser(userID int64, nickname string, email string) (*ads.User, error)
+	FindUser(nickname string) (*ads.User, error)
 	ListAds() []*ads.Ad
 	CreateAd(title string, text string, userId int64) (*ads.Ad, error)
 	ChangeAdStatus(adID int64, userID int64, published bool) (*ads.Ad, error)
+	GetAd(adID int64) (*ads.Ad, error)
 	UpdateAd(adID int64, userID int64, title string, text string) (*ads.Ad, error)
+	FindAd(title string) (*ads.Ad, error)
 }
 
-type Repository interface {
-	GetAll() []*ads.Ad
-	Add(ad *ads.Ad) error
+type Repository[T any] interface {
+	GetAll() []*T
+	Add(ad *T) error
 	GetNextID() int64
-	FindByID(adID int64) (*ads.Ad, error)
+	FindByID(id int64) (*T, error)
+	FindByName(name string) (*T, error)
 }
 
 type AdValidatorStruct struct {
@@ -31,7 +39,36 @@ type AdValidatorStruct struct {
 }
 
 type Impl struct {
-	adsRepository Repository
+	adsRepository   Repository[ads.Ad]
+	usersRepository Repository[ads.User]
+}
+
+func (a Impl) CreateUser(nickname string, email string) (*ads.User, error) {
+	user := &ads.User{
+		ID:       a.usersRepository.GetNextID(),
+		Nickname: nickname,
+		Email:    email,
+	}
+	err := a.usersRepository.Add(user)
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
+}
+
+func (a Impl) UpdateUser(userID int64, nickname string, email string) (*ads.User, error) {
+	user, err := a.usersRepository.FindByID(userID)
+	if err != nil {
+		return nil, ErrUserNotFound
+	}
+
+	user.Nickname = nickname
+	user.Email = email
+	return user, nil
+}
+
+func (a Impl) FindUser(nickname string) (*ads.User, error) {
+	return a.usersRepository.FindByName(nickname)
 }
 
 func (a Impl) ListAds() []*ads.Ad {
@@ -49,12 +86,14 @@ func (a Impl) CreateAd(title string, text string, userId int64) (*ads.Ad, error)
 	}
 
 	ad := &ads.Ad{
-		ID:        a.adsRepository.GetNextID(),
-		Title:     title,
-		Text:      text,
-		AuthorID:  userId,
-		Published: false,
+		ID:           a.adsRepository.GetNextID(),
+		Title:        title,
+		Text:         text,
+		AuthorID:     userId,
+		Published:    false,
+		CreationTime: time.Now(),
 	}
+	ad.LastUpdateTime = ad.CreationTime
 	err = a.adsRepository.Add(ad)
 	if err != nil {
 		return nil, err
@@ -76,6 +115,10 @@ func (a Impl) ChangeAdStatus(adID int64, userID int64, published bool) (*ads.Ad,
 	return ad, nil
 }
 
+func (a Impl) GetAd(adID int64) (*ads.Ad, error) {
+	return a.adsRepository.FindByID(adID)
+}
+
 func (a Impl) UpdateAd(adID int64, userID int64, title string, text string) (*ads.Ad, error) {
 	validateStruct := AdValidatorStruct{
 		Title: title,
@@ -95,11 +138,19 @@ func (a Impl) UpdateAd(adID int64, userID int64, title string, text string) (*ad
 		return nil, ErrNotUsersAd
 	}
 
+	ad.LastUpdateTime = time.Now()
 	ad.Title = title
 	ad.Text = text
 	return ad, nil
 }
 
-func NewApp(repo Repository) App {
-	return &Impl{adsRepository: repo}
+func (a Impl) FindAd(title string) (*ads.Ad, error) {
+	return a.adsRepository.FindByName(title)
+}
+
+func NewApp(adsRepository Repository[ads.Ad], usersRepository Repository[ads.User]) App {
+	return &Impl{
+		adsRepository:   adsRepository,
+		usersRepository: usersRepository,
+	}
 }
