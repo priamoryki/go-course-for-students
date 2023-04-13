@@ -11,6 +11,17 @@ type Impl struct {
 	idToAd    map[int64]*ads.Ad
 }
 
+func (i *Impl) GetAll() []*ads.Ad {
+	result := make([]*ads.Ad, 0)
+	for j := int64(0); j < i.GetNextID(); j++ {
+		ad := i.idToAd[j]
+		if ad.Published {
+			result = append(result, ad)
+		}
+	}
+	return result
+}
+
 func (i *Impl) Add(ad *ads.Ad) error {
 	i.idToAd[ad.ID] = ad
 	i.currentId += 1

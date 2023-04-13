@@ -12,12 +12,14 @@ var ErrNotUsersAd = errors.New("you don't have ad with such ID")
 var ErrValidation = errors.New("validation error")
 
 type App interface {
+	ListAds() []*ads.Ad
 	CreateAd(title string, text string, userId int64) (*ads.Ad, error)
 	ChangeAdStatus(adID int64, userID int64, published bool) (*ads.Ad, error)
 	UpdateAd(adID int64, userID int64, title string, text string) (*ads.Ad, error)
 }
 
 type Repository interface {
+	GetAll() []*ads.Ad
 	Add(ad *ads.Ad) error
 	GetNextID() int64
 	FindByID(adID int64) (*ads.Ad, error)
@@ -29,7 +31,11 @@ type AdValidatorStruct struct {
 }
 
 type Impl struct {
-	repository Repository
+	adsRepository Repository
+}
+
+func (a Impl) ListAds() []*ads.Ad {
+	return a.adsRepository.GetAll()
 }
 
 func (a Impl) CreateAd(title string, text string, userId int64) (*ads.Ad, error) {
@@ -43,13 +49,13 @@ func (a Impl) CreateAd(title string, text string, userId int64) (*ads.Ad, error)
 	}
 
 	ad := &ads.Ad{
-		ID:        a.repository.GetNextID(),
+		ID:        a.adsRepository.GetNextID(),
 		Title:     title,
 		Text:      text,
 		AuthorID:  userId,
 		Published: false,
 	}
-	err = a.repository.Add(ad)
+	err = a.adsRepository.Add(ad)
 	if err != nil {
 		return nil, err
 	}
@@ -57,7 +63,7 @@ func (a Impl) CreateAd(title string, text string, userId int64) (*ads.Ad, error)
 }
 
 func (a Impl) ChangeAdStatus(adID int64, userID int64, published bool) (*ads.Ad, error) {
-	ad, err := a.repository.FindByID(adID)
+	ad, err := a.adsRepository.FindByID(adID)
 	if err != nil {
 		return nil, ErrAdNotFound
 	}
@@ -80,7 +86,7 @@ func (a Impl) UpdateAd(adID int64, userID int64, title string, text string) (*ad
 		return nil, fmt.Errorf("%w: %s", ErrValidation, err.Error())
 	}
 
-	ad, err := a.repository.FindByID(adID)
+	ad, err := a.adsRepository.FindByID(adID)
 	if err != nil {
 		return nil, ErrAdNotFound
 	}
@@ -95,5 +101,5 @@ func (a Impl) UpdateAd(adID int64, userID int64, title string, text string) (*ad
 }
 
 func NewApp(repo Repository) App {
-	return &Impl{repository: repo}
+	return &Impl{adsRepository: repo}
 }
