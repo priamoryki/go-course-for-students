@@ -110,10 +110,10 @@ func TestGetAd(t *testing.T) {
 	_, err := client.createUser("test", "user")
 	assert.NoError(t, err)
 
-	response, err := client.createAd(0, "hello", "world")
+	_, err = client.createAd(0, "hello", "world")
 	assert.NoError(t, err)
 
-	response, err = client.getAd(0)
+	response, err := client.getAd(0)
 	assert.NoError(t, err)
 	assert.Equal(t, response.Data.Title, "hello")
 	assert.Equal(t, response.Data.Text, "world")
@@ -140,10 +140,10 @@ func TestFindAd(t *testing.T) {
 	_, err := client.createUser("test", "user")
 	assert.NoError(t, err)
 
-	response, err := client.createAd(0, "hello", "world")
+	_, err = client.createAd(0, "hello", "world")
 	assert.NoError(t, err)
 
-	response, err = client.findAd("hello")
+	response, err := client.findAd("hello")
 	assert.NoError(t, err)
 	assert.Equal(t, response.Data.Title, "hello")
 	assert.Equal(t, response.Data.Text, "world")
