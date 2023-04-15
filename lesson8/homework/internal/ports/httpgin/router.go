@@ -6,9 +6,9 @@ import (
 )
 
 func AppRouter(r gin.IRouter, a app.App) {
-	r.PUT("/users", createUser(a))                 // Метод для создания пользователя (user)
+	r.POST("/users", createUser(a))                // Метод для создания пользователя (user)
 	r.PUT("/users/:user_id", updateUser(a))        // Метод для обновления пользователя (user)
-	r.GET("/users/find", findUser(a))              // Метод для поиска объявления (ad)
+	r.GET("/users/find", findUser(a))              // Метод для поиска пользователя (user)
 	r.GET("/ads", listAds(a))                      // Метод для получения объявлений (ads)
 	r.POST("/ads", createAd(a))                    // Метод для создания объявления (ad)
 	r.PUT("/ads/:ad_id/status", changeAdStatus(a)) // Метод для изменения статуса объявления (опубликовано - Published = true или снято с публикации Published = false)

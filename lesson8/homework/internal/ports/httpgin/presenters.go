@@ -29,6 +29,10 @@ type findUserRequest struct {
 	Nickname string `json:"nickname"`
 }
 
+type listAdsRequest struct {
+	Bitmask int64 `json:"filters"`
+}
+
 type createAdRequest struct {
 	Title  string `json:"title"`
 	Text   string `json:"text"`

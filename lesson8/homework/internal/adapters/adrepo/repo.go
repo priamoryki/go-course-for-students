@@ -2,6 +2,7 @@ package adrepo
 
 import (
 	"errors"
+	"homework8/internal/adapters/filters"
 	"homework8/internal/ads"
 	"homework8/internal/app"
 )
@@ -13,15 +14,12 @@ type Impl struct {
 	idToAd    map[int64]*ads.Ad
 }
 
-func (i *Impl) GetAll() []*ads.Ad {
+func (i *Impl) GetAll(f filters.Filters[ads.Ad]) []*ads.Ad {
 	result := make([]*ads.Ad, 0)
 	for j := int64(0); j < i.GetNextID(); j++ {
-		ad := i.idToAd[j]
-		if ad.Published {
-			result = append(result, ad)
-		}
+		result = append(result, i.idToAd[j])
 	}
-	return result
+	return f.Filter(result)
 }
 
 func (i *Impl) Add(ad *ads.Ad) error {

@@ -4,8 +4,15 @@ import (
 	"errors"
 	"fmt"
 	"github.com/priamoryki/validator"
+	"homework8/internal/adapters/filters"
 	"homework8/internal/ads"
 	"time"
+)
+
+const (
+	NonPublished = 1 << iota
+	ByAuthor
+	ByCreationTime
 )
 
 var ErrUserNotFound = errors.New("can't find user with such ID")
@@ -17,7 +24,7 @@ type App interface {
 	CreateUser(nickname string, email string) (*ads.User, error)
 	UpdateUser(userID int64, nickname string, email string) (*ads.User, error)
 	FindUser(nickname string) (*ads.User, error)
-	ListAds() []*ads.Ad
+	ListAds(bitmask int64) []*ads.Ad
 	CreateAd(title string, text string, userId int64) (*ads.Ad, error)
 	ChangeAdStatus(adID int64, userID int64, published bool) (*ads.Ad, error)
 	GetAd(adID int64) (*ads.Ad, error)
@@ -26,7 +33,7 @@ type App interface {
 }
 
 type Repository[T any] interface {
-	GetAll() []*T
+	GetAll(filters filters.Filters[T]) []*T
 	Add(ad *T) error
 	GetNextID() int64
 	FindByID(id int64) (*T, error)
@@ -71,16 +78,31 @@ func (a Impl) FindUser(nickname string) (*ads.User, error) {
 	return a.usersRepository.FindByName(nickname)
 }
 
-func (a Impl) ListAds() []*ads.Ad {
-	return a.adsRepository.GetAll()
+func (a Impl) ListAds(bitmask int64) []*ads.Ad {
+	f := make(filters.Filters[ads.Ad], 0)
+	if !(bitmask&NonPublished != 0) {
+		f = append(f, filters.NewFilterNonPublished())
+	}
+	if bitmask&ByAuthor != 0 {
+		f = append(f, filters.NewFilterByAuthor())
+	}
+	if bitmask&ByCreationTime != 0 {
+		f = append(f, filters.NewFilterByCreationTime())
+	}
+	return a.adsRepository.GetAll(f)
 }
 
-func (a Impl) CreateAd(title string, text string, userId int64) (*ads.Ad, error) {
+func (a Impl) CreateAd(title string, text string, userID int64) (*ads.Ad, error) {
+	_, err := a.usersRepository.FindByID(userID)
+	if err != nil {
+		return nil, ErrUserNotFound
+	}
+
 	validateStruct := AdValidatorStruct{
 		Title: title,
 		Text:  text,
 	}
-	err := validator.Validate(validateStruct)
+	err = validator.Validate(validateStruct)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %s", ErrValidation, err.Error())
 	}
@@ -89,7 +111,7 @@ func (a Impl) CreateAd(title string, text string, userId int64) (*ads.Ad, error)
 		ID:           a.adsRepository.GetNextID(),
 		Title:        title,
 		Text:         text,
-		AuthorID:     userId,
+		AuthorID:     userID,
 		Published:    false,
 		CreationTime: time.Now(),
 	}
@@ -102,6 +124,11 @@ func (a Impl) CreateAd(title string, text string, userId int64) (*ads.Ad, error)
 }
 
 func (a Impl) ChangeAdStatus(adID int64, userID int64, published bool) (*ads.Ad, error) {
+	_, err := a.usersRepository.FindByID(userID)
+	if err != nil {
+		return nil, ErrUserNotFound
+	}
+
 	ad, err := a.adsRepository.FindByID(adID)
 	if err != nil {
 		return nil, ErrAdNotFound
@@ -120,11 +147,16 @@ func (a Impl) GetAd(adID int64) (*ads.Ad, error) {
 }
 
 func (a Impl) UpdateAd(adID int64, userID int64, title string, text string) (*ads.Ad, error) {
+	_, err := a.usersRepository.FindByID(userID)
+	if err != nil {
+		return nil, ErrUserNotFound
+	}
+
 	validateStruct := AdValidatorStruct{
 		Title: title,
 		Text:  text,
 	}
-	err := validator.Validate(validateStruct)
+	err = validator.Validate(validateStruct)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %s", ErrValidation, err.Error())
 	}

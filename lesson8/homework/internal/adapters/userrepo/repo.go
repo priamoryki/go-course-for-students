@@ -2,6 +2,7 @@ package userrepo
 
 import (
 	"errors"
+	"homework8/internal/adapters/filters"
 	"homework8/internal/ads"
 	"homework8/internal/app"
 )
@@ -13,12 +14,12 @@ type Impl struct {
 	idToUser  map[int64]*ads.User
 }
 
-func (i *Impl) GetAll() []*ads.User {
+func (i *Impl) GetAll(f filters.Filters[ads.User]) []*ads.User {
 	result := make([]*ads.User, 0)
 	for j := int64(0); j < i.GetNextID(); j++ {
 		result = append(result, i.idToUser[j])
 	}
-	return result
+	return f.Filter(result)
 }
 
 func (i *Impl) Add(user *ads.User) error {

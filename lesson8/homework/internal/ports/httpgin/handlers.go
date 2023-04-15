@@ -38,13 +38,13 @@ func updateUser(a app.App) gin.HandlerFunc {
 			return
 		}
 
-		userID, err := strconv.Atoi(c.Param("user_id"))
+		userID, err := strconv.ParseInt(c.Param("user_id"), 10, 64)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, errorResponse(err))
 			return
 		}
 
-		user, err := a.UpdateUser(int64(userID), reqBody.Nickname, reqBody.Email)
+		user, err := a.UpdateUser(userID, reqBody.Nickname, reqBody.Email)
 		if err != nil {
 			c.JSON(getStatusByError(err), errorResponse(err))
 			return
@@ -54,7 +54,7 @@ func updateUser(a app.App) gin.HandlerFunc {
 	}
 }
 
-// Метод для поиска объявления (ad)
+// Метод для поиска пользователя (user)
 func findUser(a app.App) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var reqBody findUserRequest
@@ -76,7 +76,14 @@ func findUser(a app.App) gin.HandlerFunc {
 // Метод получения объявлений (ads)
 func listAds(a app.App) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.JSON(http.StatusOK, adsSuccessResponse(a.ListAds()))
+		// С фронта приходит битовая маска фильтров
+		var reqBody listAdsRequest
+		if err := c.BindJSON(&reqBody); err != nil {
+			c.JSON(http.StatusBadRequest, errorResponse(err))
+			return
+		}
+
+		c.JSON(http.StatusOK, adsSuccessResponse(a.ListAds(reqBody.Bitmask)))
 	}
 }
 
@@ -109,13 +116,13 @@ func changeAdStatus(a app.App) gin.HandlerFunc {
 			return
 		}
 
-		adID, err := strconv.Atoi(c.Param("ad_id"))
+		adID, err := strconv.ParseInt(c.Param("ad_id"), 10, 64)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, errorResponse(err))
 			return
 		}
 
-		ad, err := a.ChangeAdStatus(int64(adID), reqBody.UserID, reqBody.Published)
+		ad, err := a.ChangeAdStatus(adID, reqBody.UserID, reqBody.Published)
 		if err != nil {
 			c.JSON(getStatusByError(err), errorResponse(err))
 			return
@@ -128,13 +135,13 @@ func changeAdStatus(a app.App) gin.HandlerFunc {
 // Метод для получения объявления (ad)
 func getAd(a app.App) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		adID, err := strconv.Atoi(c.Param("ad_id"))
+		adID, err := strconv.ParseInt(c.Param("ad_id"), 10, 64)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, errorResponse(err))
 			return
 		}
 
-		ad, err := a.GetAd(int64(adID))
+		ad, err := a.GetAd(adID)
 		if err != nil {
 			c.JSON(getStatusByError(err), errorResponse(err))
 			return
@@ -153,13 +160,13 @@ func updateAd(a app.App) gin.HandlerFunc {
 			return
 		}
 
-		adID, err := strconv.Atoi(c.Param("ad_id"))
+		adID, err := strconv.ParseInt(c.Param("ad_id"), 10, 64)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, errorResponse(err))
 			return
 		}
 
-		ad, err := a.UpdateAd(int64(adID), reqBody.UserID, reqBody.Title, reqBody.Text)
+		ad, err := a.UpdateAd(adID, reqBody.UserID, reqBody.Title, reqBody.Text)
 		if err != nil {
 			c.JSON(getStatusByError(err), errorResponse(err))
 			return
