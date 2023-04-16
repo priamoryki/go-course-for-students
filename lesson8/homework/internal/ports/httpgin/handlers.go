@@ -57,13 +57,13 @@ func updateUser(a app.App) gin.HandlerFunc {
 // Метод для поиска пользователя (user)
 func findUser(a app.App) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var reqBody findUserRequest
-		if err := c.BindJSON(&reqBody); err != nil {
-			c.JSON(http.StatusBadRequest, errorResponse(err))
+		searchQuery := c.Query("search_query")
+		if searchQuery == "" {
+			c.JSON(http.StatusBadRequest, errorResponse(errors.New("search_query parameter is empty")))
 			return
 		}
 
-		user, err := a.FindUser(reqBody.Nickname)
+		user, err := a.FindUser(searchQuery)
 		if err != nil {
 			c.JSON(getStatusByError(err), errorResponse(err))
 			return
@@ -77,13 +77,14 @@ func findUser(a app.App) gin.HandlerFunc {
 func listAds(a app.App) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// С фронта приходит битовая маска фильтров
-		var reqBody listAdsRequest
-		if err := c.BindJSON(&reqBody); err != nil {
+		filters := c.Query("filters")
+		bitmask, err := strconv.ParseInt(filters, 10, 64)
+		if err != nil {
 			c.JSON(http.StatusBadRequest, errorResponse(err))
 			return
 		}
 
-		c.JSON(http.StatusOK, adsSuccessResponse(a.ListAds(reqBody.Bitmask)))
+		c.JSON(http.StatusOK, adsSuccessResponse(a.ListAds(bitmask)))
 	}
 }
 
@@ -179,13 +180,13 @@ func updateAd(a app.App) gin.HandlerFunc {
 // Метод для поиска объявления (ad)
 func findAd(a app.App) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var reqBody findAdRequest
-		if err := c.BindJSON(&reqBody); err != nil {
-			c.JSON(http.StatusBadRequest, errorResponse(err))
+		searchQuery := c.Query("search_query")
+		if searchQuery == "" {
+			c.JSON(http.StatusBadRequest, errorResponse(errors.New("search_query parameter is empty")))
 			return
 		}
 
-		ad, err := a.FindAd(reqBody.Title)
+		ad, err := a.FindAd(searchQuery)
 		if err != nil {
 			c.JSON(getStatusByError(err), errorResponse(err))
 			return

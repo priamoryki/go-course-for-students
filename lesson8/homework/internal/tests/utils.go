@@ -144,16 +144,7 @@ func (tc *testClient) updateUser(userID int64, nickname string, email string) (u
 }
 
 func (tc *testClient) findUser(nickname string) (userResponse, error) {
-	body := map[string]any{
-		"nickname": nickname,
-	}
-
-	data, err := json.Marshal(body)
-	if err != nil {
-		return userResponse{}, fmt.Errorf("unable to marshal: %w", err)
-	}
-
-	req, err := http.NewRequest(http.MethodGet, tc.baseURL+"/api/v1/users/find", bytes.NewReader(data))
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf(tc.baseURL+"/api/v1/users/find?search_query=%s", nickname), nil)
 	if err != nil {
 		return userResponse{}, fmt.Errorf("unable to create request: %w", err)
 	}
@@ -170,16 +161,7 @@ func (tc *testClient) findUser(nickname string) (userResponse, error) {
 }
 
 func (tc *testClient) listAds(filters int64) (adsResponse, error) {
-	body := map[string]any{
-		"filters": filters,
-	}
-
-	data, err := json.Marshal(body)
-	if err != nil {
-		return adsResponse{}, fmt.Errorf("unable to marshal: %w", err)
-	}
-
-	req, err := http.NewRequest(http.MethodGet, tc.baseURL+"/api/v1/ads", bytes.NewReader(data))
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf(tc.baseURL+"/api/v1/ads?filters=%d", filters), nil)
 	if err != nil {
 		return adsResponse{}, fmt.Errorf("unable to create request: %w", err)
 	}
@@ -294,16 +276,7 @@ func (tc *testClient) updateAd(userID int64, adID int64, title string, text stri
 }
 
 func (tc *testClient) findAd(title string) (adResponse, error) {
-	body := map[string]any{
-		"title": title,
-	}
-
-	data, err := json.Marshal(body)
-	if err != nil {
-		return adResponse{}, fmt.Errorf("unable to marshal: %w", err)
-	}
-
-	req, err := http.NewRequest(http.MethodGet, tc.baseURL+"/api/v1/ads/find", bytes.NewReader(data))
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf(tc.baseURL+"/api/v1/ads/find?search_query=%s", title), nil)
 	if err != nil {
 		return adResponse{}, fmt.Errorf("unable to create request: %w", err)
 	}

@@ -113,7 +113,7 @@ func (a Impl) CreateAd(title string, text string, userID int64) (*ads.Ad, error)
 		Text:         text,
 		AuthorID:     userID,
 		Published:    false,
-		CreationTime: time.Now(),
+		CreationTime: time.Now().UTC(),
 	}
 	ad.LastUpdateTime = ad.CreationTime
 	err = a.adsRepository.Add(ad)
@@ -170,7 +170,7 @@ func (a Impl) UpdateAd(adID int64, userID int64, title string, text string) (*ad
 		return nil, ErrNotUsersAd
 	}
 
-	ad.LastUpdateTime = time.Now()
+	ad.LastUpdateTime = time.Now().UTC()
 	ad.Title = title
 	ad.Text = text
 	return ad, nil

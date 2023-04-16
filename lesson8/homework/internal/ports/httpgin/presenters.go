@@ -25,14 +25,6 @@ type updateUserRequest struct {
 	Email    string `json:"email"`
 }
 
-type findUserRequest struct {
-	Nickname string `json:"nickname"`
-}
-
-type listAdsRequest struct {
-	Bitmask int64 `json:"filters"`
-}
-
 type createAdRequest struct {
 	Title  string `json:"title"`
 	Text   string `json:"text"`
@@ -60,10 +52,6 @@ type updateAdRequest struct {
 	Title  string `json:"title"`
 	Text   string `json:"text"`
 	UserID int64  `json:"user_id"`
-}
-
-type findAdRequest struct {
-	Title string `json:"title"`
 }
 
 func userSuccessResponse(user *ads.User) response {
