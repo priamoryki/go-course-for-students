@@ -3,7 +3,7 @@ package ads
 type RepoEntityInterface interface {
 	GetID() int64
 	SetID(ID int64)
-	HasName(name string)
+	HasName(name string) bool
 }
 
 type RepoEntity struct {
