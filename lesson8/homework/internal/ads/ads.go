@@ -1,13 +1,20 @@
 package ads
 
-import "time"
+import (
+	"strings"
+	"time"
+)
 
 type Ad struct {
-	ID             int64
+	RepoEntity
 	Title          string
 	Text           string
 	AuthorID       int64
 	Published      bool
 	CreationTime   time.Time
 	LastUpdateTime time.Time
+}
+
+func (ad *Ad) HasName(name string) bool {
+	return strings.HasPrefix(ad.Title, name)
 }

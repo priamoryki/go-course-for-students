@@ -33,9 +33,8 @@ type App interface {
 }
 
 type Repository[T any] interface {
-	GetAll(filters filters.Filters[T]) []*T
+	GetAll(f filters.Filters[T]) []*T
 	Add(ad *T) error
-	GetNextID() int64
 	FindByID(id int64) (*T, error)
 	FindByName(name string) (*T, error)
 }
@@ -52,7 +51,6 @@ type Impl struct {
 
 func (a Impl) CreateUser(nickname string, email string) (*ads.User, error) {
 	user := &ads.User{
-		ID:       a.usersRepository.GetNextID(),
 		Nickname: nickname,
 		Email:    email,
 	}
@@ -108,7 +106,6 @@ func (a Impl) CreateAd(title string, text string, userID int64) (*ads.Ad, error)
 	}
 
 	ad := &ads.Ad{
-		ID:           a.adsRepository.GetNextID(),
 		Title:        title,
 		Text:         text,
 		AuthorID:     userID,
