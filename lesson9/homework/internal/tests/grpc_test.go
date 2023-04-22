@@ -2,6 +2,7 @@ package tests
 
 import (
 	"context"
+	"google.golang.org/grpc/credentials/insecure"
 	"homework9/internal/adapters/userrepo"
 	"net"
 	"testing"
@@ -42,7 +43,7 @@ func getGrpcTestClient(t *testing.T) (context.Context, grpcPort.AdServiceClient)
 		cancel()
 	})
 
-	conn, err := grpc.DialContext(ctx, "", grpc.WithContextDialer(dialer), grpc.WithInsecure())
+	conn, err := grpc.DialContext(ctx, "", grpc.WithContextDialer(dialer), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	assert.NoError(t, err, "grpc.DialContext")
 
 	t.Cleanup(func() {
@@ -237,6 +238,6 @@ func TestGRPCDeleteAd(t *testing.T) {
 	assert.Equal(t, "text", res.Text)
 	assert.Equal(t, false, res.Published)
 
-	res, err = client.GetAd(ctx, &grpcPort.GetAdRequest{Id: 0})
+	_, err = client.GetAd(ctx, &grpcPort.GetAdRequest{Id: 0})
 	assert.Error(t, err, "client.GetAd")
 }
