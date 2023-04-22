@@ -57,9 +57,9 @@ func (i *Impl) FindByName(name string) (*ads.User, error) {
 }
 
 func (i *Impl) DeleteById(userID int64) (*ads.User, error) {
+	user, err := i.FindByID(userID)
 	i.mutex.Lock()
 	defer i.mutex.Unlock()
-	user, err := i.FindByID(userID)
 	delete(i.idToUser, userID)
 	return user, err
 }
