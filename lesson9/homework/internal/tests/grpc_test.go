@@ -2,8 +2,11 @@ package tests
 
 import (
 	"context"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
+	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery"
 	"google.golang.org/grpc/credentials/insecure"
 	"homework9/internal/adapters/userrepo"
+	"log"
 	"net"
 	"testing"
 	"time"
@@ -16,13 +19,42 @@ import (
 	grpcPort "homework9/internal/ports/grpc"
 )
 
+func createServer(ctx context.Context) *grpc.Server {
+	logger := log.Default()
+	// logger и panic interceptor
+	srv := grpc.NewServer(
+		grpc.ChainUnaryInterceptor(
+			logging.UnaryServerInterceptor(
+				logging.LoggerFunc(func(_ context.Context, _ logging.Level, msg string, fields ...any) {
+					logger.Printf("message: %s, fields: %v\n", msg, fields)
+				}),
+			),
+			grpc_recovery.UnaryServerInterceptor(grpc_recovery.WithRecoveryHandler(func(p interface{}) (err error) {
+				logger.Printf("panic: %v\n", p)
+				return
+			})),
+		),
+	)
+	// graceful shutdown
+	go func(ctx context.Context) {
+		<-ctx.Done()
+		srv.GracefulStop()
+	}(ctx)
+	return srv
+}
+
 func getGrpcTestClient(t *testing.T) (context.Context, grpcPort.AdServiceClient) {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	t.Cleanup(func() {
+		cancel()
+	})
+
 	lis := bufconn.Listen(1024 * 1024)
 	t.Cleanup(func() {
 		lis.Close()
 	})
 
-	srv := grpc.NewServer()
+	srv := createServer(ctx)
 	t.Cleanup(func() {
 		srv.Stop()
 	})
@@ -37,11 +69,6 @@ func getGrpcTestClient(t *testing.T) (context.Context, grpcPort.AdServiceClient)
 	dialer := func(context.Context, string) (net.Conn, error) {
 		return lis.Dial()
 	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	t.Cleanup(func() {
-		cancel()
-	})
 
 	conn, err := grpc.DialContext(ctx, "", grpc.WithContextDialer(dialer), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	assert.NoError(t, err, "grpc.DialContext")
