@@ -40,7 +40,7 @@ func (i *Impl) FindByID(adID int64) (*ads.Ad, error) {
 	defer i.mutex.RUnlock()
 	ad, ok := i.idToAd[adID]
 	if !ok {
-		return nil, errors.New("there is no ad with such ID")
+		return nil, ErrAdNotFound
 	}
 	return ad, nil
 }
@@ -57,11 +57,14 @@ func (i *Impl) FindByName(name string) (*ads.Ad, error) {
 }
 
 func (i *Impl) DeleteById(adID int64) (*ads.Ad, error) {
-	ad, err := i.FindByID(adID)
 	i.mutex.Lock()
 	defer i.mutex.Unlock()
+	ad, ok := i.idToAd[adID]
+	if !ok {
+		return nil, ErrAdNotFound
+	}
 	delete(i.idToAd, adID)
-	return ad, err
+	return ad, nil
 }
 
 func New() app.Repository[ads.Ad] {
