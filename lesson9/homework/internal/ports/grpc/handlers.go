@@ -2,7 +2,6 @@ package grpc
 
 import (
 	"context"
-	"google.golang.org/protobuf/types/known/emptypb"
 	"homework9/internal/ads"
 	"homework9/internal/app"
 )
@@ -68,12 +67,12 @@ func (s *Server) FindUser(_ context.Context, req *FindUserRequest) (*UserRespons
 	return userToUserResponse(user), nil
 }
 
-func (s *Server) DeleteUser(_ context.Context, req *DeleteUserRequest) (*emptypb.Empty, error) {
-	_, err := s.a.DeleteUser(req.Id)
+func (s *Server) DeleteUser(_ context.Context, req *DeleteUserRequest) (*UserResponse, error) {
+	user, err := s.a.DeleteUser(req.Id)
 	if err != nil {
 		return nil, err
 	}
-	return &emptypb.Empty{}, nil
+	return userToUserResponse(user), nil
 }
 
 func (s *Server) ListAds(_ context.Context, req *ListAdsRequest) (*ListAdResponse, error) {
@@ -124,10 +123,10 @@ func (s *Server) FindAd(_ context.Context, req *FindAdRequest) (*AdResponse, err
 	return adToAdResponse(ad), nil
 }
 
-func (s *Server) DeleteAd(_ context.Context, req *DeleteAdRequest) (*emptypb.Empty, error) {
-	_, err := s.a.DeleteAd(req.AdId, req.AuthorId)
+func (s *Server) DeleteAd(_ context.Context, req *DeleteAdRequest) (*AdResponse, error) {
+	ad, err := s.a.DeleteAd(req.AdId, req.AuthorId)
 	if err != nil {
 		return nil, err
 	}
-	return &emptypb.Empty{}, nil
+	return adToAdResponse(ad), nil
 }

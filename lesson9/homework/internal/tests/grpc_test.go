@@ -107,8 +107,11 @@ func TestGRPCDeleteUser(t *testing.T) {
 	_, err := client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "Oleg", Email: "test@gmail.com"})
 	assert.NoError(t, err, "client.CreateUser")
 
-	_, err = client.DeleteUser(ctx, &grpcPort.DeleteUserRequest{Id: 0})
+	res, err := client.DeleteUser(ctx, &grpcPort.DeleteUserRequest{Id: 0})
 	assert.NoError(t, err, "client.DeleteUser")
+	assert.Equal(t, int64(0), res.Id)
+	assert.Equal(t, "Oleg", res.Name)
+	assert.Equal(t, "test@gmail.com", res.Email)
 
 	_, err = client.GetUser(ctx, &grpcPort.GetUserRequest{Id: 0})
 	assert.Error(t, err, "client.GetUser")
@@ -227,9 +230,13 @@ func TestGRPCDeleteAd(t *testing.T) {
 	_, err = client.CreateAd(ctx, &grpcPort.CreateAdRequest{Title: "title", Text: "text", UserId: 0})
 	assert.NoError(t, err, "client.CreateAd")
 
-	_, err = client.DeleteAd(ctx, &grpcPort.DeleteAdRequest{AdId: 0, AuthorId: 0})
+	res, err := client.DeleteAd(ctx, &grpcPort.DeleteAdRequest{AdId: 0, AuthorId: 0})
 	assert.NoError(t, err, "client.DeleteAd")
+	assert.Equal(t, int64(0), res.Id)
+	assert.Equal(t, "title", res.Title)
+	assert.Equal(t, "text", res.Text)
+	assert.Equal(t, false, res.Published)
 
-	_, err = client.GetAd(ctx, &grpcPort.GetAdRequest{Id: 0})
+	res, err = client.GetAd(ctx, &grpcPort.GetAdRequest{Id: 0})
 	assert.Error(t, err, "client.GetAd")
 }

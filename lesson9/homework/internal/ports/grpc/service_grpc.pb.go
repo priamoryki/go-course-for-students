@@ -11,7 +11,6 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
-	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -27,14 +26,14 @@ type AdServiceClient interface {
 	GetUser(ctx context.Context, in *GetUserRequest, opts ...grpc.CallOption) (*UserResponse, error)
 	UpdateUser(ctx context.Context, in *UpdateUserRequest, opts ...grpc.CallOption) (*UserResponse, error)
 	FindUser(ctx context.Context, in *FindUserRequest, opts ...grpc.CallOption) (*UserResponse, error)
-	DeleteUser(ctx context.Context, in *DeleteUserRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	DeleteUser(ctx context.Context, in *DeleteUserRequest, opts ...grpc.CallOption) (*UserResponse, error)
 	ListAds(ctx context.Context, in *ListAdsRequest, opts ...grpc.CallOption) (*ListAdResponse, error)
 	CreateAd(ctx context.Context, in *CreateAdRequest, opts ...grpc.CallOption) (*AdResponse, error)
 	GetAd(ctx context.Context, in *GetAdRequest, opts ...grpc.CallOption) (*AdResponse, error)
 	UpdateAd(ctx context.Context, in *UpdateAdRequest, opts ...grpc.CallOption) (*AdResponse, error)
 	ChangeAdStatus(ctx context.Context, in *ChangeAdStatusRequest, opts ...grpc.CallOption) (*AdResponse, error)
 	FindAd(ctx context.Context, in *FindAdRequest, opts ...grpc.CallOption) (*AdResponse, error)
-	DeleteAd(ctx context.Context, in *DeleteAdRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	DeleteAd(ctx context.Context, in *DeleteAdRequest, opts ...grpc.CallOption) (*AdResponse, error)
 }
 
 type adServiceClient struct {
@@ -81,8 +80,8 @@ func (c *adServiceClient) FindUser(ctx context.Context, in *FindUserRequest, opt
 	return out, nil
 }
 
-func (c *adServiceClient) DeleteUser(ctx context.Context, in *DeleteUserRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	out := new(emptypb.Empty)
+func (c *adServiceClient) DeleteUser(ctx context.Context, in *DeleteUserRequest, opts ...grpc.CallOption) (*UserResponse, error) {
+	out := new(UserResponse)
 	err := c.cc.Invoke(ctx, "/ad.AdService/DeleteUser", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -144,8 +143,8 @@ func (c *adServiceClient) FindAd(ctx context.Context, in *FindAdRequest, opts ..
 	return out, nil
 }
 
-func (c *adServiceClient) DeleteAd(ctx context.Context, in *DeleteAdRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	out := new(emptypb.Empty)
+func (c *adServiceClient) DeleteAd(ctx context.Context, in *DeleteAdRequest, opts ...grpc.CallOption) (*AdResponse, error) {
+	out := new(AdResponse)
 	err := c.cc.Invoke(ctx, "/ad.AdService/DeleteAd", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -161,14 +160,14 @@ type AdServiceServer interface {
 	GetUser(context.Context, *GetUserRequest) (*UserResponse, error)
 	UpdateUser(context.Context, *UpdateUserRequest) (*UserResponse, error)
 	FindUser(context.Context, *FindUserRequest) (*UserResponse, error)
-	DeleteUser(context.Context, *DeleteUserRequest) (*emptypb.Empty, error)
+	DeleteUser(context.Context, *DeleteUserRequest) (*UserResponse, error)
 	ListAds(context.Context, *ListAdsRequest) (*ListAdResponse, error)
 	CreateAd(context.Context, *CreateAdRequest) (*AdResponse, error)
 	GetAd(context.Context, *GetAdRequest) (*AdResponse, error)
 	UpdateAd(context.Context, *UpdateAdRequest) (*AdResponse, error)
 	ChangeAdStatus(context.Context, *ChangeAdStatusRequest) (*AdResponse, error)
 	FindAd(context.Context, *FindAdRequest) (*AdResponse, error)
-	DeleteAd(context.Context, *DeleteAdRequest) (*emptypb.Empty, error)
+	DeleteAd(context.Context, *DeleteAdRequest) (*AdResponse, error)
 	mustEmbedUnimplementedAdServiceServer()
 }
 
@@ -188,7 +187,7 @@ func (UnimplementedAdServiceServer) UpdateUser(context.Context, *UpdateUserReque
 func (UnimplementedAdServiceServer) FindUser(context.Context, *FindUserRequest) (*UserResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FindUser not implemented")
 }
-func (UnimplementedAdServiceServer) DeleteUser(context.Context, *DeleteUserRequest) (*emptypb.Empty, error) {
+func (UnimplementedAdServiceServer) DeleteUser(context.Context, *DeleteUserRequest) (*UserResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteUser not implemented")
 }
 func (UnimplementedAdServiceServer) ListAds(context.Context, *ListAdsRequest) (*ListAdResponse, error) {
@@ -209,7 +208,7 @@ func (UnimplementedAdServiceServer) ChangeAdStatus(context.Context, *ChangeAdSta
 func (UnimplementedAdServiceServer) FindAd(context.Context, *FindAdRequest) (*AdResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FindAd not implemented")
 }
-func (UnimplementedAdServiceServer) DeleteAd(context.Context, *DeleteAdRequest) (*emptypb.Empty, error) {
+func (UnimplementedAdServiceServer) DeleteAd(context.Context, *DeleteAdRequest) (*AdResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteAd not implemented")
 }
 func (UnimplementedAdServiceServer) mustEmbedUnimplementedAdServiceServer() {}
