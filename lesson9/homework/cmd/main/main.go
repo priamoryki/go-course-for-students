@@ -5,13 +5,13 @@ import (
 	"errors"
 	"fmt"
 	"golang.org/x/sync/errgroup"
-	"google.golang.org/grpc/test/bufconn"
 	"homework9/internal/adapters/adrepo"
 	"homework9/internal/adapters/userrepo"
 	"homework9/internal/app"
 	grpcPort "homework9/internal/ports/grpc"
 	"homework9/internal/ports/httpgin"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -38,6 +38,11 @@ func main() {
 		}
 	})
 
+	lis, err := net.Listen("tcp", ":1080")
+	if err != nil {
+		logger.Fatalf("can't create listener: %s\n", err.Error())
+		return
+	}
 	grpcServer := grpcPort.NewGRPCServer(logger, a)
 
 	// start GRPC server
@@ -48,11 +53,12 @@ func main() {
 		defer func() {
 			logger.Println("stopping GRPC server")
 			grpcServer.GracefulStop()
+			lis.Close()
 			close(errCh)
 		}()
 
 		go func() {
-			if err := grpcServer.Serve(bufconn.Listen(1024 * 1024)); err != nil {
+			if err := grpcServer.Serve(lis); err != nil {
 				errCh <- err
 			}
 		}()
