@@ -36,11 +36,11 @@ type App interface {
 }
 
 type Repository[T any] interface {
-	GetAll(f filters.Filters[T]) []*T
-	Add(ad *T) error
-	FindByID(id int64) (*T, error)
-	FindByName(name string) (*T, error)
-	DeleteById(id int64) (*T, error)
+	GetAll(f filters.Filters[T]) []T
+	Add(ad T) error
+	FindByID(id int64) (T, error)
+	FindByName(name string) (T, error)
+	DeleteById(id int64) (T, error)
 }
 
 type AdValidatorStruct struct {
@@ -49,8 +49,8 @@ type AdValidatorStruct struct {
 }
 
 type Impl struct {
-	adsRepository   Repository[ads.Ad]
-	usersRepository Repository[ads.User]
+	adsRepository   Repository[*ads.Ad]
+	usersRepository Repository[*ads.User]
 }
 
 func (a Impl) CreateUser(nickname string, email string) (*ads.User, error) {
@@ -89,7 +89,7 @@ func (a Impl) DeleteUser(userID int64) (*ads.User, error) {
 }
 
 func (a Impl) ListAds(bitmask int64) []*ads.Ad {
-	f := make(filters.Filters[ads.Ad], 0)
+	f := make(filters.Filters[*ads.Ad], 0)
 	if !(bitmask&NonPublished != 0) {
 		f = append(f, filters.NewFilterNonPublished())
 	}
@@ -202,7 +202,7 @@ func (a Impl) DeleteAd(adID int64, userID int64) (*ads.Ad, error) {
 	return a.adsRepository.DeleteById(adID)
 }
 
-func NewApp(adsRepository Repository[ads.Ad], usersRepository Repository[ads.User]) App {
+func NewApp(adsRepository Repository[*ads.Ad], usersRepository Repository[*ads.User]) App {
 	return &Impl{
 		adsRepository:   adsRepository,
 		usersRepository: usersRepository,

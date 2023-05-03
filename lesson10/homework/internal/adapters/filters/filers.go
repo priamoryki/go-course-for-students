@@ -3,15 +3,15 @@ package filters
 import "sort"
 
 type Filter[T any] interface {
-	Filter([]*T) []*T
+	Filter([]T) []T
 }
 
 type DefaultFilter[T any] struct {
-	condition func(*T) bool
+	condition func(T) bool
 }
 
-func (f DefaultFilter[T]) Filter(arr []*T) []*T {
-	result := make([]*T, 0, len(arr))
+func (f DefaultFilter[T]) Filter(arr []T) []T {
+	result := make([]T, 0, len(arr))
 	for _, elem := range arr {
 		if f.condition(elem) {
 			result = append(result, elem)
@@ -21,8 +21,8 @@ func (f DefaultFilter[T]) Filter(arr []*T) []*T {
 }
 
 type itemsSorter[T any] struct {
-	arr        []*T
-	comparator func(*T, *T) bool
+	arr        []T
+	comparator func(T, T) bool
 }
 
 func (s itemsSorter[T]) Len() int {
@@ -38,10 +38,10 @@ func (s itemsSorter[T]) Swap(i, j int) {
 }
 
 type SortFilter[T any] struct {
-	comparator func(*T, *T) bool
+	comparator func(T, T) bool
 }
 
-func (f SortFilter[T]) Filter(arr []*T) []*T {
+func (f SortFilter[T]) Filter(arr []T) []T {
 	sorter := itemsSorter[T]{
 		arr,
 		f.comparator,
@@ -52,7 +52,7 @@ func (f SortFilter[T]) Filter(arr []*T) []*T {
 
 type Filters[T any] []Filter[T]
 
-func (f Filters[T]) Filter(arr []*T) []*T {
+func (f Filters[T]) Filter(arr []T) []T {
 	for _, filter := range f {
 		arr = filter.Filter(arr)
 	}
