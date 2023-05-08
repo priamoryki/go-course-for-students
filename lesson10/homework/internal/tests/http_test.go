@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestCreateUser(t *testing.T) {
+func TestHTTPCreateUser(t *testing.T) {
 	client := getTestClient()
 
 	userResponse, err := client.createUser("test", "user")
@@ -16,7 +16,7 @@ func TestCreateUser(t *testing.T) {
 	assert.Equal(t, userResponse.Data.Email, "user")
 }
 
-func TestUpdateUser(t *testing.T) {
+func TestHTTPUpdateUser(t *testing.T) {
 	client := getTestClient()
 
 	_, err := client.createUser("test", "user")
@@ -29,7 +29,7 @@ func TestUpdateUser(t *testing.T) {
 	assert.Equal(t, userResponse.Data.Email, "user")
 }
 
-func TestFindUser(t *testing.T) {
+func TestHTTPFindUser(t *testing.T) {
 	client := getTestClient()
 
 	_, err := client.createUser("test", "user")
@@ -42,7 +42,7 @@ func TestFindUser(t *testing.T) {
 	assert.Equal(t, userResponse.Data.Email, "user")
 }
 
-func TestListAds(t *testing.T) {
+func TestHTTPListAds(t *testing.T) {
 	client := getTestClient()
 
 	_, err := client.createUser("test", "user")
@@ -67,7 +67,7 @@ func TestListAds(t *testing.T) {
 	assert.True(t, ads.Data[0].Published)
 }
 
-func TestCreateAd(t *testing.T) {
+func TestHTTPCreateAd(t *testing.T) {
 	client := getTestClient()
 
 	_, err := client.createUser("test", "user")
@@ -82,7 +82,7 @@ func TestCreateAd(t *testing.T) {
 	assert.False(t, response.Data.Published)
 }
 
-func TestChangeAdStatus(t *testing.T) {
+func TestHTTPChangeAdStatus(t *testing.T) {
 	client := getTestClient()
 
 	_, err := client.createUser("test", "user")
@@ -104,7 +104,7 @@ func TestChangeAdStatus(t *testing.T) {
 	assert.False(t, response.Data.Published)
 }
 
-func TestGetAd(t *testing.T) {
+func TestHTTPGetAd(t *testing.T) {
 	client := getTestClient()
 
 	_, err := client.createUser("test", "user")
@@ -119,7 +119,7 @@ func TestGetAd(t *testing.T) {
 	assert.Equal(t, response.Data.Text, "world")
 }
 
-func TestUpdateAd(t *testing.T) {
+func TestHTTPUpdateAd(t *testing.T) {
 	client := getTestClient()
 
 	_, err := client.createUser("test", "user")
@@ -134,7 +134,7 @@ func TestUpdateAd(t *testing.T) {
 	assert.Equal(t, response.Data.Text, "мир")
 }
 
-func TestFindAd(t *testing.T) {
+func TestHTTPFindAd(t *testing.T) {
 	client := getTestClient()
 
 	_, err := client.createUser("test", "user")

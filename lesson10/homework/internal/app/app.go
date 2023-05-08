@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/priamoryki/validator"
+	"homework10/internal/adapters/baserepo"
 	"homework10/internal/adapters/filters"
 	"homework10/internal/ads"
 	"time"
@@ -35,22 +36,14 @@ type App interface {
 	DeleteAd(adID int64, userID int64) (*ads.Ad, error)
 }
 
-type Repository[T any] interface {
-	GetAll(f filters.Filters[T]) []T
-	Add(ad T) error
-	FindByID(id int64) (T, error)
-	FindByName(name string) (T, error)
-	DeleteById(id int64) (T, error)
-}
-
 type AdValidatorStruct struct {
 	Title string `validate:"min:1;max:100"`
 	Text  string `validate:"min:1;max:500"`
 }
 
 type Impl struct {
-	adsRepository   Repository[*ads.Ad]
-	usersRepository Repository[*ads.User]
+	adsRepository   baserepo.Repository[*ads.Ad]
+	usersRepository baserepo.Repository[*ads.User]
 }
 
 func (a Impl) CreateUser(nickname string, email string) (*ads.User, error) {
@@ -202,7 +195,7 @@ func (a Impl) DeleteAd(adID int64, userID int64) (*ads.Ad, error) {
 	return a.adsRepository.DeleteById(adID)
 }
 
-func NewApp(adsRepository Repository[*ads.Ad], usersRepository Repository[*ads.User]) App {
+func NewApp(adsRepository baserepo.Repository[*ads.Ad], usersRepository baserepo.Repository[*ads.User]) App {
 	return &Impl{
 		adsRepository:   adsRepository,
 		usersRepository: usersRepository,

@@ -4,11 +4,18 @@ import (
 	"errors"
 	"homework10/internal/adapters/filters"
 	"homework10/internal/ads"
-	"homework10/internal/app"
 	"sync"
 )
 
 var ErrNotFound = errors.New("element not found")
+
+type Repository[T any] interface {
+	GetAll(f filters.Filters[T]) []T
+	Add(ad T) error
+	FindByID(id int64) (T, error)
+	FindByName(name string) (T, error)
+	DeleteById(id int64) (T, error)
+}
 
 func getZeroValue[T any]() T {
 	var result T
@@ -72,7 +79,7 @@ func (i *Impl[T]) DeleteById(id int64) (T, error) {
 	return elem, nil
 }
 
-func New[T ads.RepoEntityInterface]() app.Repository[T] {
+func New[T ads.RepoEntityInterface]() Repository[T] {
 	return &Impl[T]{
 		currentId: 0,
 		idToElem:  make(map[int64]T),
