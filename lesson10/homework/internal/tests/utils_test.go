@@ -4,10 +4,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/stretchr/testify/suite"
 	"homework10/internal/adapters/userrepo"
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"testing"
 
 	"homework10/internal/adapters/adrepo"
 	"homework10/internal/app"
@@ -50,14 +52,23 @@ type testClient struct {
 	baseURL string
 }
 
-func getTestClient() *testClient {
+type HTTPSuite struct {
+	suite.Suite
+	Client *testClient
+}
+
+func (s *HTTPSuite) SetupTest() {
 	server := httpgin.NewHTTPServer(":18080", app.NewApp(adrepo.New(), userrepo.New()))
 	testServer := httptest.NewServer(server.Handler())
 
-	return &testClient{
+	s.Client = &testClient{
 		client:  testServer.Client(),
 		baseURL: testServer.URL,
 	}
+}
+
+func TestHTTPSuite(t *testing.T) {
+	suite.Run(t, new(HTTPSuite))
 }
 
 func (tc *testClient) getResponse(req *http.Request, out any) error {

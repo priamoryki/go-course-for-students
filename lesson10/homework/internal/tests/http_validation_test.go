@@ -2,107 +2,104 @@ package tests
 
 import (
 	"strings"
-	"testing"
-
-	"github.com/stretchr/testify/assert"
 )
 
-func TestCreateAd_EmptyTitle(t *testing.T) {
-	client := getTestClient()
+func (s *HTTPSuite) TestCreateAd_EmptyTitle() {
+	client := s.Client
 
 	_, err := client.createUser("test", "user")
-	assert.NoError(t, err)
+	s.NoError(err)
 
 	_, err = client.createAd(0, "", "world")
-	assert.ErrorIs(t, err, ErrBadRequest)
+	s.ErrorIs(err, ErrBadRequest)
 }
 
-func TestCreateAd_TooLongTitle(t *testing.T) {
-	client := getTestClient()
+func (s *HTTPSuite) TestCreateAd_TooLongTitle() {
+	client := s.Client
 
 	_, err := client.createUser("test", "user")
-	assert.NoError(t, err)
+	s.NoError(err)
 
 	title := strings.Repeat("a", 101)
 
 	_, err = client.createAd(0, title, "world")
-	assert.ErrorIs(t, err, ErrBadRequest)
+	s.ErrorIs(err, ErrBadRequest)
 }
 
-func TestCreateAd_EmptyText(t *testing.T) {
-	client := getTestClient()
+func (s *HTTPSuite) TestCreateAd_EmptyText() {
+	client := s.Client
 
 	_, err := client.createUser("test", "user")
-	assert.NoError(t, err)
+	s.NoError(err)
 
 	_, err = client.createAd(0, "title", "")
-	assert.ErrorIs(t, err, ErrBadRequest)
+	s.ErrorIs(err, ErrBadRequest)
 }
 
-func TestCreateAd_TooLongText(t *testing.T) {
-	client := getTestClient()
+func (s *HTTPSuite) TestCreateAd_TooLongText() {
+	client := s.Client
 
 	_, err := client.createUser("test", "user")
-	assert.NoError(t, err)
+	s.NoError(err)
 
 	text := strings.Repeat("a", 501)
 
 	_, err = client.createAd(0, "title", text)
-	assert.ErrorIs(t, err, ErrBadRequest)
+	s.ErrorIs(err, ErrBadRequest)
 }
 
-func TestUpdateAd_EmptyTitle(t *testing.T) {
-	client := getTestClient()
+func (s *HTTPSuite) TestUpdateAd_EmptyTitle() {
+	client := s.Client
 
 	_, err := client.createUser("test", "user")
-	assert.NoError(t, err)
+	s.NoError(err)
 
 	resp, err := client.createAd(0, "hello", "world")
-	assert.NoError(t, err)
+	s.NoError(err)
 
 	_, err = client.updateAd(0, resp.Data.ID, "", "new_world")
-	assert.ErrorIs(t, err, ErrBadRequest)
+	s.ErrorIs(err, ErrBadRequest)
 }
 
-func TestUpdateAd_TooLongTitle(t *testing.T) {
-	client := getTestClient()
+func (s *HTTPSuite) TestUpdateAd_TooLongTitle() {
+	client := s.Client
 
 	_, err := client.createUser("test", "user")
-	assert.NoError(t, err)
+	s.NoError(err)
 
 	resp, err := client.createAd(0, "hello", "world")
-	assert.NoError(t, err)
+	s.NoError(err)
 
 	title := strings.Repeat("a", 101)
 
 	_, err = client.updateAd(0, resp.Data.ID, title, "world")
-	assert.ErrorIs(t, err, ErrBadRequest)
+	s.ErrorIs(err, ErrBadRequest)
 }
 
-func TestUpdateAd_EmptyText(t *testing.T) {
-	client := getTestClient()
+func (s *HTTPSuite) TestUpdateAd_EmptyText() {
+	client := s.Client
 
 	_, err := client.createUser("test", "user")
-	assert.NoError(t, err)
+	s.NoError(err)
 
 	resp, err := client.createAd(0, "hello", "world")
-	assert.NoError(t, err)
+	s.NoError(err)
 
 	_, err = client.updateAd(0, resp.Data.ID, "title", "")
-	assert.ErrorIs(t, err, ErrBadRequest)
+	s.ErrorIs(err, ErrBadRequest)
 }
 
-func TestUpdateAd_TooLongText(t *testing.T) {
-	client := getTestClient()
+func (s *HTTPSuite) TestUpdateAd_TooLongText() {
+	client := s.Client
 
 	_, err := client.createUser("test", "user")
-	assert.NoError(t, err)
+	s.NoError(err)
 
 	text := strings.Repeat("a", 501)
 
 	resp, err := client.createAd(0, "hello", "world")
-	assert.NoError(t, err)
+	s.NoError(err)
 
 	_, err = client.updateAd(0, resp.Data.ID, "title", text)
-	assert.ErrorIs(t, err, ErrBadRequest)
+	s.ErrorIs(err, ErrBadRequest)
 }

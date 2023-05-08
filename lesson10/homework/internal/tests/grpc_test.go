@@ -2,6 +2,7 @@ package tests
 
 import (
 	"context"
+	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc/credentials/insecure"
 	"homework10/internal/adapters/userrepo"
 	"log"
@@ -9,7 +10,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/test/bufconn"
 	"homework10/internal/adapters/adrepo"
@@ -17,26 +17,38 @@ import (
 	grpcPort "homework10/internal/ports/grpc"
 )
 
-func getGrpcTestClient(t *testing.T) (context.Context, grpcPort.AdServiceClient) {
+type GRPCSuite struct {
+	suite.Suite
+	Ctx    context.Context
+	Cancel context.CancelFunc
+	Lis    *bufconn.Listener
+	Srv    *grpc.Server
+	Conn   *grpc.ClientConn
+	Client grpcPort.AdServiceClient
+}
+
+func (s *GRPCSuite) TearDownTest() {
+	s.Cancel()
+	s.Lis.Close()
+	s.Srv.Stop()
+	s.Conn.Close()
+}
+
+func (s *GRPCSuite) SetupTest() {
 	logger := log.Default()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	t.Cleanup(func() {
-		cancel()
-	})
+	s.Ctx = ctx
+	s.Cancel = cancel
 
 	lis := bufconn.Listen(1024 * 1024)
-	t.Cleanup(func() {
-		lis.Close()
-	})
+	s.Lis = lis
 
 	srv := grpcPort.NewGRPCServer(logger, app.NewApp(adrepo.New(), userrepo.New()))
-	t.Cleanup(func() {
-		srv.Stop()
-	})
+	s.Srv = srv
 
 	go func() {
-		assert.NoError(t, srv.Serve(lis), "srv.Serve")
+		s.NoError(srv.Serve(lis), "srv.Serve")
 	}()
 
 	dialer := func(context.Context, string) (net.Conn, error) {
@@ -44,200 +56,201 @@ func getGrpcTestClient(t *testing.T) (context.Context, grpcPort.AdServiceClient)
 	}
 
 	conn, err := grpc.DialContext(ctx, "", grpc.WithContextDialer(dialer), grpc.WithTransportCredentials(insecure.NewCredentials()))
-	assert.NoError(t, err, "grpc.DialContext")
+	s.NoError(err, "grpc.DialContext")
+	s.Conn = conn
 
-	t.Cleanup(func() {
-		conn.Close()
-	})
-
-	return ctx, grpcPort.NewAdServiceClient(conn)
+	s.Client = grpcPort.NewAdServiceClient(conn)
 }
 
-func TestGRPCCreateUser(t *testing.T) {
-	ctx, client := getGrpcTestClient(t)
+func (s *GRPCSuite) TestGRPCCreateUser() {
+	ctx, client := s.Ctx, s.Client
 
 	res, err := client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "Oleg", Email: "test@gmail.com"})
-	assert.NoError(t, err, "client.CreateUser")
-	assert.Equal(t, int64(0), res.Id)
-	assert.Equal(t, "Oleg", res.Name)
-	assert.Equal(t, "test@gmail.com", res.Email)
+	s.NoError(err, "client.CreateUser")
+	s.Equal(int64(0), res.Id)
+	s.Equal("Oleg", res.Name)
+	s.Equal("test@gmail.com", res.Email)
 }
 
-func TestGRPCGetUser(t *testing.T) {
-	ctx, client := getGrpcTestClient(t)
+func (s *GRPCSuite) TestGRPCGetUser() {
+	ctx, client := s.Ctx, s.Client
 
 	_, err := client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "Oleg", Email: "test@gmail.com"})
-	assert.NoError(t, err, "client.CreateUser")
+	s.NoError(err, "client.CreateUser")
 
 	res, err := client.GetUser(ctx, &grpcPort.GetUserRequest{Id: 0})
-	assert.NoError(t, err, "client.GetUser")
-	assert.Equal(t, int64(0), res.Id)
-	assert.Equal(t, "Oleg", res.Name)
-	assert.Equal(t, "test@gmail.com", res.Email)
+	s.NoError(err, "client.GetUser")
+	s.Equal(int64(0), res.Id)
+	s.Equal("Oleg", res.Name)
+	s.Equal("test@gmail.com", res.Email)
 }
 
-func TestGRPCUpdateUser(t *testing.T) {
-	ctx, client := getGrpcTestClient(t)
+func (s *GRPCSuite) TestGRPCUpdateUser() {
+	ctx, client := s.Ctx, s.Client
 
 	_, err := client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "Oleg", Email: "test@gmail.com"})
-	assert.NoError(t, err, "client.CreateUser")
+	s.NoError(err, "client.CreateUser")
 
 	res, err := client.UpdateUser(ctx, &grpcPort.UpdateUserRequest{Id: 0, Name: "Oleg1", Email: "test1@gmail.com"})
-	assert.NoError(t, err, "client.UpdateUser")
-	assert.Equal(t, int64(0), res.Id)
-	assert.Equal(t, "Oleg1", res.Name)
-	assert.Equal(t, "test1@gmail.com", res.Email)
+	s.NoError(err, "client.UpdateUser")
+	s.Equal(int64(0), res.Id)
+	s.Equal("Oleg1", res.Name)
+	s.Equal("test1@gmail.com", res.Email)
 }
 
-func TestGRPCFindUser(t *testing.T) {
-	ctx, client := getGrpcTestClient(t)
+func (s *GRPCSuite) TestGRPCFindUser() {
+	ctx, client := s.Ctx, s.Client
 
 	_, err := client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "Oleg", Email: "test@gmail.com"})
-	assert.NoError(t, err, "client.CreateUser")
+	s.NoError(err, "client.CreateUser")
 
 	res, err := client.FindUser(ctx, &grpcPort.FindUserRequest{Query: "Oleg"})
-	assert.NoError(t, err, "client.FindUser")
-	assert.Equal(t, int64(0), res.Id)
-	assert.Equal(t, "Oleg", res.Name)
-	assert.Equal(t, "test@gmail.com", res.Email)
+	s.NoError(err, "client.FindUser")
+	s.Equal(int64(0), res.Id)
+	s.Equal("Oleg", res.Name)
+	s.Equal("test@gmail.com", res.Email)
 }
 
-func TestGRPCDeleteUser(t *testing.T) {
-	ctx, client := getGrpcTestClient(t)
+func (s *GRPCSuite) TestGRPCDeleteUser() {
+	ctx, client := s.Ctx, s.Client
 
 	_, err := client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "Oleg", Email: "test@gmail.com"})
-	assert.NoError(t, err, "client.CreateUser")
+	s.NoError(err, "client.CreateUser")
 
 	res, err := client.DeleteUser(ctx, &grpcPort.DeleteUserRequest{Id: 0})
-	assert.NoError(t, err, "client.DeleteUser")
-	assert.Equal(t, int64(0), res.Id)
-	assert.Equal(t, "Oleg", res.Name)
-	assert.Equal(t, "test@gmail.com", res.Email)
+	s.NoError(err, "client.DeleteUser")
+	s.Equal(int64(0), res.Id)
+	s.Equal("Oleg", res.Name)
+	s.Equal("test@gmail.com", res.Email)
 
 	_, err = client.GetUser(ctx, &grpcPort.GetUserRequest{Id: 0})
-	assert.Error(t, err, "client.GetUser")
+	s.Error(err, "client.GetUser")
 }
 
-func TestGRPCListAds(t *testing.T) {
-	ctx, client := getGrpcTestClient(t)
+func (s *GRPCSuite) TestGRPCListAds() {
+	ctx, client := s.Ctx, s.Client
 
 	_, err := client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "Oleg", Email: "test@gmail.com"})
-	assert.NoError(t, err, "client.CreateUser")
+	s.NoError(err, "client.CreateUser")
 
 	_, err = client.CreateAd(ctx, &grpcPort.CreateAdRequest{Title: "title", Text: "text", UserId: 0})
-	assert.NoError(t, err, "client.CreateAd")
+	s.NoError(err, "client.CreateAd")
 
 	res, err := client.ListAds(ctx, &grpcPort.ListAdsRequest{Bitmask: 0})
-	assert.NoError(t, err, "client.ListAds")
-	assert.Equal(t, 0, len(res.List))
+	s.NoError(err, "client.ListAds")
+	s.Equal(0, len(res.List))
 
 	_, err = client.ChangeAdStatus(ctx, &grpcPort.ChangeAdStatusRequest{AdId: 0, UserId: 0, Published: true})
-	assert.NoError(t, err, "client.ChangeAdStatus")
+	s.NoError(err, "client.ChangeAdStatus")
 
 	res, err = client.ListAds(ctx, &grpcPort.ListAdsRequest{Bitmask: 0})
-	assert.NoError(t, err, "client.ListAds")
-	assert.Equal(t, 1, len(res.List))
-	assert.Equal(t, int64(0), res.List[0].Id)
+	s.NoError(err, "client.ListAds")
+	s.Equal(1, len(res.List))
+	s.Equal(int64(0), res.List[0].Id)
 }
 
-func TestGRPCCreateAd(t *testing.T) {
-	ctx, client := getGrpcTestClient(t)
+func (s *GRPCSuite) TestGRPCCreateAd() {
+	ctx, client := s.Ctx, s.Client
 
 	_, err := client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "Oleg", Email: "test@gmail.com"})
-	assert.NoError(t, err, "client.CreateUser")
+	s.NoError(err, "client.CreateUser")
 
 	res, err := client.CreateAd(ctx, &grpcPort.CreateAdRequest{Title: "title", Text: "text", UserId: 0})
-	assert.NoError(t, err, "client.CreateAd")
-	assert.Equal(t, int64(0), res.Id)
-	assert.Equal(t, "title", res.Title)
-	assert.Equal(t, "text", res.Text)
-	assert.Equal(t, false, res.Published)
+	s.NoError(err, "client.CreateAd")
+	s.Equal(int64(0), res.Id)
+	s.Equal("title", res.Title)
+	s.Equal("text", res.Text)
+	s.Equal(false, res.Published)
 }
 
-func TestGRPCGetAd(t *testing.T) {
-	ctx, client := getGrpcTestClient(t)
+func (s *GRPCSuite) TestGRPCGetAd() {
+	ctx, client := s.Ctx, s.Client
 
 	_, err := client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "Oleg", Email: "test@gmail.com"})
-	assert.NoError(t, err, "client.CreateUser")
+	s.NoError(err, "client.CreateUser")
 
 	_, err = client.CreateAd(ctx, &grpcPort.CreateAdRequest{Title: "title", Text: "text", UserId: 0})
-	assert.NoError(t, err, "client.CreateAd")
+	s.NoError(err, "client.CreateAd")
 
 	res, err := client.GetAd(ctx, &grpcPort.GetAdRequest{Id: 0})
-	assert.NoError(t, err, "client.GetAd")
-	assert.Equal(t, int64(0), res.Id)
-	assert.Equal(t, "title", res.Title)
-	assert.Equal(t, "text", res.Text)
-	assert.Equal(t, false, res.Published)
+	s.NoError(err, "client.GetAd")
+	s.Equal(int64(0), res.Id)
+	s.Equal("title", res.Title)
+	s.Equal("text", res.Text)
+	s.Equal(false, res.Published)
 }
 
-func TestGRPCUpdateAd(t *testing.T) {
-	ctx, client := getGrpcTestClient(t)
+func (s *GRPCSuite) TestGRPCUpdateAd() {
+	ctx, client := s.Ctx, s.Client
 
 	_, err := client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "Oleg", Email: "test@gmail.com"})
-	assert.NoError(t, err, "client.CreateUser")
+	s.NoError(err, "client.CreateUser")
 
 	_, err = client.CreateAd(ctx, &grpcPort.CreateAdRequest{Title: "title", Text: "text", UserId: 0})
-	assert.NoError(t, err, "client.CreateAd")
+	s.NoError(err, "client.CreateAd")
 
 	res, err := client.UpdateAd(ctx, &grpcPort.UpdateAdRequest{Title: "title1", Text: "text1", UserId: 0})
-	assert.NoError(t, err, "client.UpdateAd")
-	assert.Equal(t, int64(0), res.Id)
-	assert.Equal(t, "title1", res.Title)
-	assert.Equal(t, "text1", res.Text)
-	assert.Equal(t, false, res.Published)
+	s.NoError(err, "client.UpdateAd")
+	s.Equal(int64(0), res.Id)
+	s.Equal("title1", res.Title)
+	s.Equal("text1", res.Text)
+	s.Equal(false, res.Published)
 }
 
-func TestGRPCChangeAdStatus(t *testing.T) {
-	ctx, client := getGrpcTestClient(t)
+func (s *GRPCSuite) TestGRPCChangeAdStatus() {
+	ctx, client := s.Ctx, s.Client
 
 	_, err := client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "Oleg", Email: "test@gmail.com"})
-	assert.NoError(t, err, "client.CreateUser")
+	s.NoError(err, "client.CreateUser")
 
 	_, err = client.CreateAd(ctx, &grpcPort.CreateAdRequest{Title: "title", Text: "text", UserId: 0})
-	assert.NoError(t, err, "client.CreateAd")
+	s.NoError(err, "client.CreateAd")
 
 	res, err := client.ChangeAdStatus(ctx, &grpcPort.ChangeAdStatusRequest{AdId: 0, UserId: 0, Published: true})
-	assert.NoError(t, err, "client.UpdateAd")
-	assert.Equal(t, int64(0), res.Id)
-	assert.Equal(t, "title", res.Title)
-	assert.Equal(t, "text", res.Text)
-	assert.Equal(t, true, res.Published)
+	s.NoError(err, "client.UpdateAd")
+	s.Equal(int64(0), res.Id)
+	s.Equal("title", res.Title)
+	s.Equal("text", res.Text)
+	s.Equal(true, res.Published)
 }
 
-func TestGRPCFindAd(t *testing.T) {
-	ctx, client := getGrpcTestClient(t)
+func (s *GRPCSuite) TestGRPCFindAd() {
+	ctx, client := s.Ctx, s.Client
 
 	_, err := client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "Oleg", Email: "test@gmail.com"})
-	assert.NoError(t, err, "client.CreateUser")
+	s.NoError(err, "client.CreateUser")
 
 	_, err = client.CreateAd(ctx, &grpcPort.CreateAdRequest{Title: "title", Text: "text", UserId: 0})
-	assert.NoError(t, err, "client.CreateAd")
+	s.NoError(err, "client.CreateAd")
 
 	res, err := client.FindAd(ctx, &grpcPort.FindAdRequest{Query: "title"})
-	assert.NoError(t, err, "client.FindAd")
-	assert.Equal(t, int64(0), res.Id)
-	assert.Equal(t, "title", res.Title)
-	assert.Equal(t, "text", res.Text)
-	assert.Equal(t, false, res.Published)
+	s.NoError(err, "client.FindAd")
+	s.Equal(int64(0), res.Id)
+	s.Equal("title", res.Title)
+	s.Equal("text", res.Text)
+	s.Equal(false, res.Published)
 }
 
-func TestGRPCDeleteAd(t *testing.T) {
-	ctx, client := getGrpcTestClient(t)
+func (s *GRPCSuite) TestGRPCDeleteAd() {
+	ctx, client := s.Ctx, s.Client
 
 	_, err := client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "Oleg", Email: "test@gmail.com"})
-	assert.NoError(t, err, "client.CreateUser")
+	s.NoError(err, "client.CreateUser")
 
 	_, err = client.CreateAd(ctx, &grpcPort.CreateAdRequest{Title: "title", Text: "text", UserId: 0})
-	assert.NoError(t, err, "client.CreateAd")
+	s.NoError(err, "client.CreateAd")
 
 	res, err := client.DeleteAd(ctx, &grpcPort.DeleteAdRequest{AdId: 0, AuthorId: 0})
-	assert.NoError(t, err, "client.DeleteAd")
-	assert.Equal(t, int64(0), res.Id)
-	assert.Equal(t, "title", res.Title)
-	assert.Equal(t, "text", res.Text)
-	assert.Equal(t, false, res.Published)
+	s.NoError(err, "client.DeleteAd")
+	s.Equal(int64(0), res.Id)
+	s.Equal("title", res.Title)
+	s.Equal("text", res.Text)
+	s.Equal(false, res.Published)
 
 	_, err = client.GetAd(ctx, &grpcPort.GetAdRequest{Id: 0})
-	assert.Error(t, err, "client.GetAd")
+	s.Error(err, "client.GetAd")
+}
+
+func TestGRPCSuite(t *testing.T) {
+	suite.Run(t, new(GRPCSuite))
 }
