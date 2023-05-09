@@ -27,7 +27,7 @@ type GRPCSuite struct {
 	Client grpcPort.AdServiceClient
 }
 
-func (s *GRPCSuite) TearDownTest() {
+func (s *GRPCSuite) TearDownTests() {
 	s.Cancel()
 	s.Lis.Close()
 	s.Srv.Stop()

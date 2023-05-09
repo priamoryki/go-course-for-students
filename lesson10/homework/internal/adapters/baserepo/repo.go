@@ -11,7 +11,7 @@ var ErrNotFound = errors.New("element not found")
 
 type Repository[T any] interface {
 	GetAll(f filters.Filters[T]) []T
-	Add(ad T) error
+	Add(elem T) error
 	FindByID(id int64) (T, error)
 	FindByName(name string) (T, error)
 	DeleteById(id int64) (T, error)

@@ -127,6 +127,23 @@ func (tc *testClient) createUser(nickname string, email string) (userResponse, e
 	return response, nil
 }
 
+func (tc *testClient) getUser(userID int64) (userResponse, error) {
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf(tc.baseURL+"/api/v1/users/%d", userID), nil)
+	if err != nil {
+		return userResponse{}, fmt.Errorf("unable to create request: %w", err)
+	}
+
+	req.Header.Add("Content-Type", "application/json")
+
+	var response userResponse
+	err = tc.getResponse(req, &response)
+	if err != nil {
+		return userResponse{}, err
+	}
+
+	return response, nil
+}
+
 func (tc *testClient) updateUser(userID int64, nickname string, email string) (userResponse, error) {
 	body := map[string]any{
 		"nickname": nickname,
@@ -156,6 +173,32 @@ func (tc *testClient) updateUser(userID int64, nickname string, email string) (u
 
 func (tc *testClient) findUser(nickname string) (userResponse, error) {
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf(tc.baseURL+"/api/v1/users/find?search_query=%s", nickname), nil)
+	if err != nil {
+		return userResponse{}, fmt.Errorf("unable to create request: %w", err)
+	}
+
+	req.Header.Add("Content-Type", "application/json")
+
+	var response userResponse
+	err = tc.getResponse(req, &response)
+	if err != nil {
+		return userResponse{}, err
+	}
+
+	return response, nil
+}
+
+func (tc *testClient) deleteUser(userID int64) (userResponse, error) {
+	body := map[string]any{
+		"user_id": userID,
+	}
+
+	data, err := json.Marshal(body)
+	if err != nil {
+		return userResponse{}, fmt.Errorf("unable to marshal: %w", err)
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, tc.baseURL+"/api/v1/users/delete", bytes.NewReader(data))
 	if err != nil {
 		return userResponse{}, fmt.Errorf("unable to create request: %w", err)
 	}
@@ -288,6 +331,33 @@ func (tc *testClient) updateAd(userID int64, adID int64, title string, text stri
 
 func (tc *testClient) findAd(title string) (adResponse, error) {
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf(tc.baseURL+"/api/v1/ads/find?search_query=%s", title), nil)
+	if err != nil {
+		return adResponse{}, fmt.Errorf("unable to create request: %w", err)
+	}
+
+	req.Header.Add("Content-Type", "application/json")
+
+	var response adResponse
+	err = tc.getResponse(req, &response)
+	if err != nil {
+		return adResponse{}, err
+	}
+
+	return response, nil
+}
+
+func (tc *testClient) deleteAd(adID int64, userID int64) (adResponse, error) {
+	body := map[string]any{
+		"ad_id":   adID,
+		"user_id": userID,
+	}
+
+	data, err := json.Marshal(body)
+	if err != nil {
+		return adResponse{}, fmt.Errorf("unable to marshal: %w", err)
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, tc.baseURL+"/api/v1/ads/delete", bytes.NewReader(data))
 	if err != nil {
 		return adResponse{}, fmt.Errorf("unable to create request: %w", err)
 	}

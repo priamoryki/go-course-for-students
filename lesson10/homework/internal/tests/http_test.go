@@ -10,6 +10,22 @@ func (s *HTTPSuite) TestHTTPCreateUser() {
 	s.Equal(userResponse.Data.Email, "user")
 }
 
+func (s *HTTPSuite) TestHTTPGetUser() {
+	client := s.Client
+
+	_, err := client.getUser(0)
+	s.Error(err)
+
+	_, err = client.createUser("test", "user")
+	s.NoError(err)
+
+	userResponse, err := client.getUser(0)
+	s.NoError(err)
+	s.Zero(userResponse.Data.ID)
+	s.Equal(userResponse.Data.Nickname, "test")
+	s.Equal(userResponse.Data.Email, "user")
+}
+
 func (s *HTTPSuite) TestHTTPUpdateUser() {
 	client := s.Client
 
@@ -26,10 +42,29 @@ func (s *HTTPSuite) TestHTTPUpdateUser() {
 func (s *HTTPSuite) TestHTTPFindUser() {
 	client := s.Client
 
-	_, err := client.createUser("test", "user")
+	_, err := client.findUser("test")
+	s.Error(err)
+
+	_, err = client.createUser("test", "user")
 	s.NoError(err)
 
 	userResponse, err := client.findUser("test")
+	s.NoError(err)
+	s.Zero(userResponse.Data.ID)
+	s.Equal(userResponse.Data.Nickname, "test")
+	s.Equal(userResponse.Data.Email, "user")
+}
+
+func (s *HTTPSuite) TestHTTPDeleteUser() {
+	client := s.Client
+
+	_, err := client.deleteUser(0)
+	s.Error(err)
+
+	_, err = client.createUser("test", "user")
+	s.NoError(err)
+
+	userResponse, err := client.deleteUser(0)
 	s.NoError(err)
 	s.Zero(userResponse.Data.ID)
 	s.Equal(userResponse.Data.Nickname, "test")
@@ -64,7 +99,10 @@ func (s *HTTPSuite) TestHTTPListAds() {
 func (s *HTTPSuite) TestHTTPCreateAd() {
 	client := s.Client
 
-	_, err := client.createUser("test", "user")
+	_, err := client.createAd(0, "hello", "world")
+	s.Error(err)
+
+	_, err = client.createUser("test", "user")
 	s.NoError(err)
 
 	response, err := client.createAd(0, "hello", "world")
@@ -81,6 +119,9 @@ func (s *HTTPSuite) TestHTTPChangeAdStatus() {
 
 	_, err := client.createUser("test", "user")
 	s.NoError(err)
+
+	_, err = client.changeAdStatus(0, 0, true)
+	s.Error(err)
 
 	response, err := client.createAd(0, "hello", "world")
 	s.NoError(err)
@@ -104,6 +145,9 @@ func (s *HTTPSuite) TestHTTPGetAd() {
 	_, err := client.createUser("test", "user")
 	s.NoError(err)
 
+	_, err = client.getAd(0)
+	s.Error(err)
+
 	_, err = client.createAd(0, "hello", "world")
 	s.NoError(err)
 
@@ -118,6 +162,9 @@ func (s *HTTPSuite) TestHTTPUpdateAd() {
 
 	_, err := client.createUser("test", "user")
 	s.NoError(err)
+
+	_, err = client.updateAd(0, 0, "привет", "мир")
+	s.Error(err)
 
 	response, err := client.createAd(0, "hello", "world")
 	s.NoError(err)
@@ -134,10 +181,28 @@ func (s *HTTPSuite) TestHTTPFindAd() {
 	_, err := client.createUser("test", "user")
 	s.NoError(err)
 
+	_, err = client.findAd("hello")
+	s.Error(err)
+
 	_, err = client.createAd(0, "hello", "world")
 	s.NoError(err)
 
 	response, err := client.findAd("hello")
+	s.NoError(err)
+	s.Equal(response.Data.Title, "hello")
+	s.Equal(response.Data.Text, "world")
+}
+
+func (s *HTTPSuite) TestHTTPDeleteAd() {
+	client := s.Client
+
+	_, err := client.createUser("test", "user")
+	s.NoError(err)
+
+	_, err = client.createAd(0, "hello", "world")
+	s.NoError(err)
+
+	response, err := client.deleteAd(0, 0)
 	s.NoError(err)
 	s.Equal(response.Data.Title, "hello")
 	s.Equal(response.Data.Text, "world")

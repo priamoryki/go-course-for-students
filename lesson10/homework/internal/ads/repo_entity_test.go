@@ -20,3 +20,9 @@ func TestRepoEntity_GetID(t *testing.T) {
 	entity.SetID(0)
 	assert.Equal(t, int64(0), entity.GetID())
 }
+
+func TestRepoEntity_HasName(t *testing.T) {
+	entity := &TestEntity{}
+	entity.SetID(0)
+	assert.Equal(t, false, entity.HasName(""))
+}

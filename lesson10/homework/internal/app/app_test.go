@@ -3,25 +3,38 @@ package app
 import (
 	"fmt"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 	"homework10/internal/adapters/adrepo"
 	"homework10/internal/adapters/userrepo"
+	"homework10/internal/ads"
+	"homework10/internal/app/mocks"
 	"testing"
 )
 
 type SuiteStruct struct {
 	suite.Suite
-	A App
+	AdsRepository  *mocks.AbstractRepoMock[*ads.Ad]
+	UserRepository *mocks.AbstractRepoMock[*ads.User]
+	A              App
 }
 
 func (s *SuiteStruct) SetupTest() {
-	s.A = getApp()
-}
+	s.AdsRepository = mocks.NewAdsRepoMock()
+	s.AdsRepository.On("GetAll", mock.Anything)
+	s.AdsRepository.On("Add", mock.Anything)
+	s.AdsRepository.On("FindByID", mock.Anything)
+	s.AdsRepository.On("FindByName", mock.Anything)
+	s.AdsRepository.On("DeleteById", mock.Anything)
 
-func getApp() App {
-	adsRepository := adrepo.New()
-	userRepository := userrepo.New()
-	return NewApp(adsRepository, userRepository)
+	s.UserRepository = mocks.NewUsersRepoMock()
+	s.UserRepository.On("GetAll", mock.Anything)
+	s.UserRepository.On("Add", mock.Anything)
+	s.UserRepository.On("FindByID", mock.Anything)
+	s.UserRepository.On("FindByName", mock.Anything)
+	s.UserRepository.On("DeleteById", mock.Anything)
+
+	s.A = NewApp(s.AdsRepository, s.UserRepository)
 }
 
 func (s *SuiteStruct) TestCreateUser() {
@@ -32,6 +45,7 @@ func (s *SuiteStruct) TestCreateUser() {
 	s.Equal(int64(0), res.ID)
 	s.Equal("Oleg", res.Nickname)
 	s.Equal("test@gmail.com", res.Email)
+	s.UserRepository.AssertNumberOfCalls(s.T(), "Add", 1)
 }
 
 func (s *SuiteStruct) TestGetUser() {
@@ -45,6 +59,7 @@ func (s *SuiteStruct) TestGetUser() {
 	s.Equal(int64(0), res.ID)
 	s.Equal("Oleg", res.Nickname)
 	s.Equal("test@gmail.com", res.Email)
+	s.UserRepository.AssertNumberOfCalls(s.T(), "FindByID", 1)
 }
 
 func (s *SuiteStruct) TestUpdateUser() {
@@ -58,6 +73,7 @@ func (s *SuiteStruct) TestUpdateUser() {
 	s.Equal(int64(0), res.ID)
 	s.Equal("Oleg1", res.Nickname)
 	s.Equal("test1@gmail.com", res.Email)
+	s.UserRepository.AssertNumberOfCalls(s.T(), "FindByID", 1)
 }
 
 func (s *SuiteStruct) TestFindUser() {
@@ -71,6 +87,7 @@ func (s *SuiteStruct) TestFindUser() {
 	s.Equal(int64(0), res.ID)
 	s.Equal("Oleg", res.Nickname)
 	s.Equal("test@gmail.com", res.Email)
+	s.UserRepository.AssertNumberOfCalls(s.T(), "FindByName", 1)
 }
 
 func (s *SuiteStruct) TestDeleteUser() {
@@ -84,6 +101,7 @@ func (s *SuiteStruct) TestDeleteUser() {
 	s.Equal(int64(0), res.ID)
 	s.Equal("Oleg", res.Nickname)
 	s.Equal("test@gmail.com", res.Email)
+	s.UserRepository.AssertNumberOfCalls(s.T(), "DeleteById", 1)
 
 	_, err = a.GetUser(0)
 	s.Error(err, "app.GetUser")
@@ -101,6 +119,7 @@ func (s *SuiteStruct) TestListAds() {
 	res := a.ListAds(0)
 	s.NoError(err, "app.ListAds")
 	s.Equal(0, len(res))
+	s.AdsRepository.AssertNumberOfCalls(s.T(), "GetAll", 1)
 
 	_, err = a.ChangeAdStatus(0, 0, true)
 	s.NoError(err, "app.ChangeAdStatus")
@@ -109,6 +128,7 @@ func (s *SuiteStruct) TestListAds() {
 	s.NoError(err, "app.ListAds")
 	s.Equal(1, len(res))
 	s.Equal(int64(0), res[0].ID)
+	s.AdsRepository.AssertNumberOfCalls(s.T(), "GetAll", 2)
 }
 
 func (s *SuiteStruct) TestCreateAd() {
@@ -123,6 +143,8 @@ func (s *SuiteStruct) TestCreateAd() {
 	s.Equal("title", res.Title)
 	s.Equal("text", res.Text)
 	s.Equal(false, res.Published)
+	s.AdsRepository.AssertNumberOfCalls(s.T(), "Add", 1)
+	s.UserRepository.AssertNumberOfCalls(s.T(), "FindByID", 1)
 }
 
 func (s *SuiteStruct) TestGetAd() {
@@ -140,6 +162,7 @@ func (s *SuiteStruct) TestGetAd() {
 	s.Equal("title", res.Title)
 	s.Equal("text", res.Text)
 	s.Equal(false, res.Published)
+	s.AdsRepository.AssertNumberOfCalls(s.T(), "FindByID", 1)
 }
 
 func (s *SuiteStruct) TestUpdateAd() {
@@ -157,6 +180,7 @@ func (s *SuiteStruct) TestUpdateAd() {
 	s.Equal("title1", res.Title)
 	s.Equal("text1", res.Text)
 	s.Equal(false, res.Published)
+	s.AdsRepository.AssertNumberOfCalls(s.T(), "FindByID", 1)
 }
 
 func (s *SuiteStruct) TestChangeAdStatus() {
@@ -174,6 +198,7 @@ func (s *SuiteStruct) TestChangeAdStatus() {
 	s.Equal("title", res.Title)
 	s.Equal("text", res.Text)
 	s.Equal(true, res.Published)
+	s.AdsRepository.AssertNumberOfCalls(s.T(), "FindByID", 1)
 }
 
 func (s *SuiteStruct) TestFindAd() {
@@ -191,6 +216,7 @@ func (s *SuiteStruct) TestFindAd() {
 	s.Equal("title", res.Title)
 	s.Equal("text", res.Text)
 	s.Equal(false, res.Published)
+	s.AdsRepository.AssertNumberOfCalls(s.T(), "FindByName", 1)
 }
 
 func (s *SuiteStruct) TestDeleteAd() {
@@ -208,13 +234,14 @@ func (s *SuiteStruct) TestDeleteAd() {
 	s.Equal("title", res.Title)
 	s.Equal("text", res.Text)
 	s.Equal(false, res.Published)
+	s.AdsRepository.AssertNumberOfCalls(s.T(), "DeleteById", 1)
 
 	_, err = a.GetAd(0)
 	s.Error(err, "app.GetAd")
 }
 
 func BenchmarkListAds(b *testing.B) {
-	a := getApp()
+	a := NewApp(adrepo.New(), userrepo.New())
 
 	_, err := a.CreateUser("user1", "user1@gmail.com")
 	assert.NoError(b, err, "can't create user")
