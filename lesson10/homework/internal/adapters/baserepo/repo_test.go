@@ -43,17 +43,17 @@ func TestDeleteById(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, int64(0), entity.ID)
 
-	entity, err = repo.DeleteById(0)
+	_, err = repo.DeleteById(0)
 	assert.Error(t, err)
 }
 
 func TestFindByID(t *testing.T) {
 	repo := New[*TestType]()
 
-	entity, err := repo.FindByID(0)
+	_, err := repo.FindByID(0)
 	assert.Error(t, err)
 
-	entity = &TestType{Name: "a"}
+	entity := &TestType{Name: "a"}
 	err = repo.Add(entity)
 	assert.NoError(t, err)
 	assert.Equal(t, int64(0), entity.ID)
@@ -66,10 +66,10 @@ func TestFindByID(t *testing.T) {
 func TestFindByName(t *testing.T) {
 	repo := New[*TestType]()
 
-	entity, err := repo.FindByName("a")
+	_, err := repo.FindByName("a")
 	assert.Error(t, err)
 
-	entity = &TestType{Name: "a"}
+	entity := &TestType{Name: "a"}
 	err = repo.Add(entity)
 	assert.NoError(t, err)
 	assert.Equal(t, int64(0), entity.ID)
